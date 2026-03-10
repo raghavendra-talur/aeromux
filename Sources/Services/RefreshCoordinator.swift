@@ -12,15 +12,24 @@ final class RefreshCoordinator {
     private let settings: SettingsStore
     private let client: AeroSpaceClient
     private let configService: AeroSpaceConfigService
+    private let workspaceMemoryStore: WorkspaceMemoryStore
     private let stateStore: SidebarStateStore
     private let logger: AppLogger
     private var scheduledRefresh: Task<Void, Never>?
     private var pollingTask: Task<Void, Never>?
 
-    init(settings: SettingsStore, client: AeroSpaceClient, configService: AeroSpaceConfigService, stateStore: SidebarStateStore, logger: AppLogger) {
+    init(
+        settings: SettingsStore,
+        client: AeroSpaceClient,
+        configService: AeroSpaceConfigService,
+        workspaceMemoryStore: WorkspaceMemoryStore,
+        stateStore: SidebarStateStore,
+        logger: AppLogger
+    ) {
         self.settings = settings
         self.client = client
         self.configService = configService
+        self.workspaceMemoryStore = workspaceMemoryStore
         self.stateStore = stateStore
         self.logger = logger
     }
@@ -62,12 +71,26 @@ final class RefreshCoordinator {
             async let integrationTask = configService.integrationStatus(sidebarWidth: settings.sidebarWidth)
             let snapshot = try await snapshotTask
             let integrationStatus = await integrationTask
-            let totalWindowCount = snapshot.workspaces.reduce(0) { $0 + $1.windows.count }
+            async let workspaceMemoryTask = workspaceMemoryStore.metadataByWorkspace(
+                for: snapshot.workspaces.map(\.workspaceName)
+            )
+            let workspaceMemory = await workspaceMemoryTask
+            let annotatedWorkspaces = snapshot.workspaces.map { workspace in
+                let metadata = workspaceMemory[workspace.workspaceName]
+                return WorkspaceGroup(
+                    workspaceName: workspace.workspaceName,
+                    windows: workspace.windows,
+                    isFocused: workspace.isFocused,
+                    titleOverride: metadata?.title,
+                    descriptionOverride: metadata?.description
+                )
+            }
+            let totalWindowCount = annotatedWorkspaces.reduce(0) { $0 + $1.windows.count }
             let status: SidebarStatus = totalWindowCount == 0 ? .empty : .ready
             let workspaceState = WorkspaceState(
                 workspaceName: snapshot.workspaceName,
                 monitorName: snapshot.monitorName,
-                workspaces: snapshot.workspaces,
+                workspaces: annotatedWorkspaces,
                 focusedWindowId: snapshot.focusedWindowId,
                 integrationStatus: integrationStatus,
                 lastUpdatedAt: .now,

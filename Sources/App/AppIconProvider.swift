@@ -2,21 +2,31 @@ import AppKit
 
 enum AppIconProvider {
     static func applicationIconImage() -> NSImage? {
-        loadImage(named: "AeroMuxAppIcon", extension: "png")
+        loadImage(resourceName: "AeroMux.icns")
+            ?? loadDevelopmentImage(at: "../../../Packaging/AeroMux.icns")
     }
 
     static func statusItemImage() -> NSImage? {
-        let image = loadImage(named: "AeroMuxStatusTemplate", extension: "png")
+        let image = loadImage(resourceName: "AeroMuxStatusTemplate.png")
+            ?? loadDevelopmentImage(at: "../../../Sources/Resources/AeroMuxStatusTemplate.png")
             ?? NSImage(systemSymbolName: "paperplane.fill", accessibilityDescription: "AeroMux")
         image?.isTemplate = true
         image?.size = NSSize(width: 18, height: 18)
         return image
     }
 
-    private static func loadImage(named name: String, extension ext: String) -> NSImage? {
-        guard let url = Bundle.module.url(forResource: name, withExtension: ext) else {
-            return nil
-        }
+    private static func loadImage(resourceName: String) -> NSImage? {
+        guard let resourceURL = Bundle.main.resourceURL else { return nil }
+        let url = resourceURL.appendingPathComponent(resourceName)
+        return NSImage(contentsOf: url)
+    }
+
+    private static func loadDevelopmentImage(at relativePath: String) -> NSImage? {
+        let sourceFileURL = URL(fileURLWithPath: #filePath)
+        let url = sourceFileURL
+            .deletingLastPathComponent()
+            .appending(path: relativePath)
+            .standardizedFileURL
         return NSImage(contentsOf: url)
     }
 }

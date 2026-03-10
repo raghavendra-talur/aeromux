@@ -7,12 +7,22 @@ final class SidebarWindowController: NSWindowController, NSWindowDelegate {
     private let settings: SettingsStore
     private let stateStore: SidebarStateStore
     private let focusService: FocusService
+    private let workspaceMemoryStore: WorkspaceMemoryStore
+    private let refreshCoordinator: RefreshCoordinator
     private var stateObserver: AnyCancellable?
 
-    init(settings: SettingsStore, stateStore: SidebarStateStore, focusService: FocusService) {
+    init(
+        settings: SettingsStore,
+        stateStore: SidebarStateStore,
+        focusService: FocusService,
+        workspaceMemoryStore: WorkspaceMemoryStore,
+        refreshCoordinator: RefreshCoordinator
+    ) {
         self.settings = settings
         self.stateStore = stateStore
         self.focusService = focusService
+        self.workspaceMemoryStore = workspaceMemoryStore
+        self.refreshCoordinator = refreshCoordinator
 
         let panel = NSPanel(
             contentRect: .zero,
@@ -37,7 +47,9 @@ final class SidebarWindowController: NSWindowController, NSWindowDelegate {
             rootView: SidebarRootView(
                 stateStore: stateStore,
                 settings: settings,
-                focusService: focusService
+                focusService: focusService,
+                workspaceMemoryStore: workspaceMemoryStore,
+                refreshCoordinator: refreshCoordinator
             )
         )
 

@@ -11,10 +11,12 @@ final class AppEnvironment {
     let bridgeServer: RefreshBridgeServer
     let windowController: SidebarWindowController
     let statusItemController: StatusItemController
+    let workspaceMemoryStore: WorkspaceMemoryStore
 
     init() {
         logger = AppLogger()
         settings = SettingsStore()
+        workspaceMemoryStore = WorkspaceMemoryStore(logger: logger)
         let aerospaceExecutablePath = AeroSpaceExecutableResolver.resolve()
         let commandRunner = ProcessCommandRunner(logger: logger)
         let client = AeroSpaceClient(
@@ -37,6 +39,7 @@ final class AppEnvironment {
             settings: settings,
             client: client,
             configService: configService,
+            workspaceMemoryStore: workspaceMemoryStore,
             stateStore: stateStore,
             logger: logger
         )
@@ -46,7 +49,9 @@ final class AppEnvironment {
         windowController = SidebarWindowController(
             settings: settings,
             stateStore: stateStore,
-            focusService: focusService
+            focusService: focusService,
+            workspaceMemoryStore: workspaceMemoryStore,
+            refreshCoordinator: refreshCoordinator
         )
         statusItemController = StatusItemController(
             settings: settings,

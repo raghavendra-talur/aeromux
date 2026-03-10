@@ -4,6 +4,8 @@ struct SidebarRootView: View {
     @ObservedObject var stateStore: SidebarStateStore
     @ObservedObject var settings: SettingsStore
     let focusService: FocusService
+    let workspaceMemoryStore: WorkspaceMemoryStore
+    let refreshCoordinator: RefreshCoordinator
 
     var body: some View {
         ZStack {
@@ -36,9 +38,16 @@ struct SidebarRootView: View {
                 .font(.system(size: 11, weight: .semibold, design: .rounded))
                 .foregroundStyle(.secondary)
 
-            Text("Active: \(stateStore.state.workspaceName)")
+            Text("Active: \(stateStore.state.focusedWorkspaceGroup?.displayTitle ?? stateStore.state.workspaceName)")
                 .font(.system(size: 24, weight: .bold, design: .rounded))
                 .lineLimit(1)
+
+            if let metadataLine = stateStore.state.focusedWorkspaceGroup?.metadataLine {
+                Text(metadataLine)
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
 
             HStack(spacing: 6) {
                 Text("\(stateStore.state.visibleWorkspaceCount) task\(stateStore.state.visibleWorkspaceCount == 1 ? "" : "s")")
@@ -70,7 +79,10 @@ struct SidebarRootView: View {
                         WorkspaceSectionView(
                             workspace: workspace,
                             showsIcons: settings.showsAppIcons,
-                            focusService: focusService
+                            focusService: focusService,
+                            allWorkspaceNames: stateStore.state.workspaces.map(\.workspaceName),
+                            workspaceMemoryStore: workspaceMemoryStore,
+                            refreshCoordinator: refreshCoordinator
                         )
                     }
                 }

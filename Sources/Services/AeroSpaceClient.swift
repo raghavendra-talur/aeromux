@@ -233,7 +233,9 @@ extension AeroSpaceClient {
             WorkspaceGroup(
                 workspaceName: workspaceName,
                 windows: sortWindows(windows),
-                isFocused: workspaceName == focusedWorkspaceName
+                isFocused: workspaceName == focusedWorkspaceName,
+                titleOverride: nil,
+                descriptionOverride: nil
             )
         }
 
@@ -242,7 +244,9 @@ extension AeroSpaceClient {
                 WorkspaceGroup(
                     workspaceName: focusedWorkspaceName,
                     windows: [],
-                    isFocused: true
+                    isFocused: true,
+                    titleOverride: nil,
+                    descriptionOverride: nil
                 )
             )
         }

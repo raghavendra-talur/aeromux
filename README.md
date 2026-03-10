@@ -17,6 +17,7 @@ This is an early release MVP. It now ships as a GitHub Releases DMG and can stil
 - Supports a localhost refresh hook for lower-latency updates
 - Detects whether your AeroSpace left gap is large enough to avoid overlap
 - Lets you keep workspace positions stable instead of moving the active one to the top
+- Supports local workspace titles/descriptions from `~/.config/aeromux/workspaces.json`
 
 ## Why It Exists
 
@@ -116,6 +117,42 @@ curl -fsS -X POST http://127.0.0.1:39173/refresh >/dev/null 2>&1 || true
 A helper script is included at `scripts/aerospace-refresh-hook.sh`.
 
 The refresh listener binds only to `127.0.0.1:39173`.
+
+## Workspace Memory File
+
+AeroMux can read custom titles and descriptions for AeroSpace workspaces from:
+
+```bash
+~/.config/aeromux/workspaces.json
+```
+
+If `XDG_CONFIG_HOME` is set, AeroMux uses:
+
+```bash
+$XDG_CONFIG_HOME/aeromux/workspaces.json
+```
+
+The file is created automatically on first run and populated with the currently discovered AeroSpace workspaces:
+
+```json
+{
+  "workspaces": [
+    {
+      "workspace": "1",
+      "title": "1",
+      "description": null
+    }
+  ]
+}
+```
+
+Behavior:
+
+- `workspace` must match the AeroSpace workspace name exactly
+- `title` replaces the default `Task <workspace>` label
+- `description` is shown under the title
+- when a custom title is present, AeroMux also shows the raw workspace name underneath as `Workspace <name>`
+- you can edit title and description directly from the sidebar using the pencil button on each workspace card
 
 ## AeroSpace Commands Used
 
@@ -222,3 +259,5 @@ Issues and compatibility reports are useful, especially for:
 ## Releasing
 
 If you are maintaining this repository, local packaging and tag-based GitHub Releases are documented in [docs/RELEASING.md](docs/RELEASING.md).
+
+General local contributor workflow is documented in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).

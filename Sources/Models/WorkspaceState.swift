@@ -43,6 +43,8 @@ struct WorkspaceGroup: Identifiable, Equatable {
     let workspaceName: String
     let windows: [WindowItem]
     let isFocused: Bool
+    let titleOverride: String?
+    let descriptionOverride: String?
 }
 
 struct WindowItem: Identifiable, Equatable {
@@ -70,6 +72,10 @@ extension WorkspaceState {
     var visibleWorkspaceCount: Int {
         workspaces.count
     }
+
+    var focusedWorkspaceGroup: WorkspaceGroup? {
+        workspaces.first(where: \.isFocused)
+    }
 }
 
 extension WindowItem {
@@ -81,5 +87,25 @@ extension WindowItem {
         }
 
         return NSWorkspace.shared.runningApplications.first(where: { $0.localizedName == appName })?.icon
+    }
+}
+
+extension WorkspaceGroup {
+    var displayTitle: String {
+        titleOverride ?? "Task \(workspaceName)"
+    }
+
+    var metadataLine: String? {
+        if let titleOverride, titleOverride != workspaceName {
+            return "Workspace \(workspaceName)"
+        }
+        return nil
+    }
+
+    var detailLine: String {
+        if let descriptionOverride {
+            return descriptionOverride
+        }
+        return "\(windows.count) window\(windows.count == 1 ? "" : "s")"
     }
 }

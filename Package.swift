@@ -13,8 +13,8 @@ let package = Package(
         .executableTarget(
             name: "AeroMux",
             path: "Sources",
-            resources: [
-                .process("Resources"),
+            exclude: [
+                "Resources",
             ]
         ),
     ]
