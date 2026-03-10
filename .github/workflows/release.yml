@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: macos-14
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Show toolchain versions
+        run: |
+          sw_vers
+          swift --version
+
+      - name: Build DMG
+        run: |
+          chmod +x scripts/build-release-app.sh scripts/build-release-dmg.sh
+          VERSION="${GITHUB_REF_NAME}" ./scripts/build-release-dmg.sh
+
+      - name: Generate checksum
+        run: |
+          cd dist
+          shasum -a 256 "AeroMux-${GITHUB_REF_NAME}.dmg" > "AeroMux-${GITHUB_REF_NAME}.dmg.sha256"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            "dist/AeroMux-${GITHUB_REF_NAME}.dmg" \
+            "dist/AeroMux-${GITHUB_REF_NAME}.dmg.sha256" \
+            --generate-notes \
+            --title "${GITHUB_REF_NAME}"

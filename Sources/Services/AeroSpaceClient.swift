@@ -27,10 +27,12 @@ enum AeroSpaceClientError: Error, LocalizedError {
 
 actor AeroSpaceClient {
     private let commandRunner: CommandRunning
+    private let aerospaceExecutablePath: String?
     private let logger: AppLogger
 
-    init(commandRunner: CommandRunning, logger: AppLogger) {
+    init(commandRunner: CommandRunning, aerospaceExecutablePath: String?, logger: AppLogger) {
         self.commandRunner = commandRunner
+        self.aerospaceExecutablePath = aerospaceExecutablePath
         self.logger = logger
     }
 
@@ -94,9 +96,13 @@ actor AeroSpaceClient {
     }
 
     private func runAeroSpace(arguments: [String], allowFailure: Bool) async throws -> String? {
+        guard let aerospaceExecutablePath else {
+            throw AeroSpaceClientError.binaryMissing
+        }
+
         let result: CommandResult
         do {
-            result = try await commandRunner.run("/usr/bin/env", arguments: ["aerospace"] + arguments)
+            result = try await commandRunner.run(aerospaceExecutablePath, arguments: arguments)
         } catch {
             throw AeroSpaceClientError.binaryMissing
         }

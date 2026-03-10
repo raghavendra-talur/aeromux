@@ -13,11 +13,24 @@ final class AppEnvironment {
     init() {
         logger = AppLogger()
         settings = SettingsStore()
+        let aerospaceExecutablePath = AeroSpaceExecutableResolver.resolve()
         let commandRunner = ProcessCommandRunner(logger: logger)
-        let client = AeroSpaceClient(commandRunner: commandRunner, logger: logger)
-        let configService = AeroSpaceConfigService(commandRunner: commandRunner, logger: logger)
+        let client = AeroSpaceClient(
+            commandRunner: commandRunner,
+            aerospaceExecutablePath: aerospaceExecutablePath,
+            logger: logger
+        )
+        let configService = AeroSpaceConfigService(
+            commandRunner: commandRunner,
+            aerospaceExecutablePath: aerospaceExecutablePath,
+            logger: logger
+        )
         stateStore = SidebarStateStore(settings: settings, logger: logger)
-        focusService = FocusService(commandRunner: commandRunner, logger: logger)
+        focusService = FocusService(
+            commandRunner: commandRunner,
+            aerospaceExecutablePath: aerospaceExecutablePath,
+            logger: logger
+        )
         refreshCoordinator = RefreshCoordinator(
             settings: settings,
             client: client,

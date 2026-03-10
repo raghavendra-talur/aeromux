@@ -16,17 +16,23 @@ enum FocusServiceError: Error, LocalizedError {
 
 actor FocusService {
     private let commandRunner: CommandRunning
+    private let aerospaceExecutablePath: String?
     private let logger: AppLogger
 
-    init(commandRunner: CommandRunning, logger: AppLogger) {
+    init(commandRunner: CommandRunning, aerospaceExecutablePath: String?, logger: AppLogger) {
         self.commandRunner = commandRunner
+        self.aerospaceExecutablePath = aerospaceExecutablePath
         self.logger = logger
     }
 
     func focus(windowId: String) async {
         logger.info("focus.request \(windowId)")
         do {
-            let result = try await commandRunner.run("/usr/bin/env", arguments: ["aerospace", "focus", "--window-id", windowId])
+            guard let aerospaceExecutablePath else {
+                throw FocusServiceError.failed("AeroSpace CLI not found.")
+            }
+
+            let result = try await commandRunner.run(aerospaceExecutablePath, arguments: ["focus", "--window-id", windowId])
             guard result.exitCode == 0 else {
                 if result.stderr.contains("unknown") || result.stderr.contains("Usage") {
                     throw FocusServiceError.unsupported

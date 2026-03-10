@@ -2,10 +2,12 @@ import Foundation
 
 actor AeroSpaceConfigService {
     private let commandRunner: CommandRunning
+    private let aerospaceExecutablePath: String?
     private let logger: AppLogger
 
-    init(commandRunner: CommandRunning, logger: AppLogger) {
+    init(commandRunner: CommandRunning, aerospaceExecutablePath: String?, logger: AppLogger) {
         self.commandRunner = commandRunner
+        self.aerospaceExecutablePath = aerospaceExecutablePath
         self.logger = logger
     }
 
@@ -47,7 +49,11 @@ actor AeroSpaceConfigService {
     }
 
     private func configPath() async throws -> URL {
-        let result = try await commandRunner.run("/usr/bin/env", arguments: ["aerospace", "config", "--config-path"])
+        guard let aerospaceExecutablePath else {
+            throw CommandError.launchFailure("AeroSpace CLI not found.")
+        }
+
+        let result = try await commandRunner.run(aerospaceExecutablePath, arguments: ["config", "--config-path"])
         guard result.exitCode == 0 else {
             throw CommandError.nonZeroExit(result.stderr.isEmpty ? "Unable to read AeroSpace config path." : result.stderr)
         }
