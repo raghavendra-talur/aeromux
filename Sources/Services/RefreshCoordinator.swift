@@ -56,7 +56,9 @@ final class RefreshCoordinator {
         stateStore.beginRefresh()
 
         do {
-            async let snapshotTask = client.readSnapshot()
+            async let snapshotTask = client.readSnapshot(
+                prioritizeFocusedWorkspace: settings.reordersFocusedWorkspaceToTop
+            )
             async let integrationTask = configService.integrationStatus(sidebarWidth: settings.sidebarWidth)
             let snapshot = try await snapshotTask
             let integrationStatus = await integrationTask

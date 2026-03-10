@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 
 @MainActor
 final class AppEnvironment {
@@ -9,6 +10,7 @@ final class AppEnvironment {
     let refreshCoordinator: RefreshCoordinator
     let bridgeServer: RefreshBridgeServer
     let windowController: SidebarWindowController
+    let statusItemController: StatusItemController
 
     init() {
         logger = AppLogger()
@@ -46,17 +48,27 @@ final class AppEnvironment {
             stateStore: stateStore,
             focusService: focusService
         )
+        statusItemController = StatusItemController(
+            settings: settings,
+            refreshCoordinator: refreshCoordinator,
+            windowController: windowController
+        )
     }
 
     func start() {
         logger.info("app.start")
+        if let appIcon = AppIconProvider.applicationIconImage() {
+            NSApplication.shared.applicationIconImage = appIcon
+        }
         windowController.showWindow()
+        statusItemController.start()
         bridgeServer.start()
         refreshCoordinator.start()
     }
 
     func stop() {
         logger.info("app.stop")
+        statusItemController.stop()
         bridgeServer.stop()
         refreshCoordinator.stop()
     }

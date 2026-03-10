@@ -9,6 +9,7 @@ CONTENTS_DIR="${APP_DIR}/Contents"
 MACOS_DIR="${CONTENTS_DIR}/MacOS"
 RESOURCES_DIR="${CONTENTS_DIR}/Resources"
 INFO_TEMPLATE="${ROOT_DIR}/Packaging/Info.plist"
+BIN_DIR="$(swift build -c release --package-path "${ROOT_DIR}" --show-bin-path)"
 
 VERSION="${VERSION:-}"
 if [[ -z "${VERSION}" ]]; then
@@ -20,8 +21,14 @@ mkdir -p "${MACOS_DIR}" "${RESOURCES_DIR}"
 
 swift build -c release --package-path "${ROOT_DIR}" >&2
 
-cp "${ROOT_DIR}/.build/release/${APP_NAME}" "${MACOS_DIR}/${APP_NAME}"
+cp "${BIN_DIR}/${APP_NAME}" "${MACOS_DIR}/${APP_NAME}"
 chmod 755 "${MACOS_DIR}/${APP_NAME}"
+
+find "${BIN_DIR}" -maxdepth 1 -name '*.bundle' -exec cp -R {} "${RESOURCES_DIR}" \;
+
+if [[ -f "${ROOT_DIR}/Packaging/AeroMux.icns" ]]; then
+  cp "${ROOT_DIR}/Packaging/AeroMux.icns" "${RESOURCES_DIR}/AeroMux.icns"
+fi
 
 sed "s/__VERSION__/${VERSION}/g" "${INFO_TEMPLATE}" > "${CONTENTS_DIR}/Info.plist"
 printf 'APPL????' > "${CONTENTS_DIR}/PkgInfo"

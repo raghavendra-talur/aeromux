@@ -12,7 +12,10 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "AeroMux",
-            path: "Sources"
+            path: "Sources",
+            resources: [
+                .process("Resources"),
+            ]
         ),
     ]
 )

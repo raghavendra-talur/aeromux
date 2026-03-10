@@ -36,7 +36,7 @@ actor AeroSpaceClient {
         self.logger = logger
     }
 
-    func readSnapshot() async throws -> AeroSpaceSnapshot {
+    func readSnapshot(prioritizeFocusedWorkspace: Bool) async throws -> AeroSpaceSnapshot {
         async let workspaceNameTask = focusedWorkspaceName()
         async let focusedWindowIdTask = focusedWindowId()
         async let monitorNameTask = focusedMonitorName()
@@ -44,7 +44,11 @@ actor AeroSpaceClient {
         let workspaceName = try await workspaceNameTask
         let focusedWindowId = try await focusedWindowIdTask
         let monitorName = try await monitorNameTask
-        let workspaces = try await workspaces(focusedWorkspaceName: workspaceName, focusedWindowId: focusedWindowId)
+        let workspaces = try await workspaces(
+            focusedWorkspaceName: workspaceName,
+            focusedWindowId: focusedWindowId,
+            prioritizeFocusedWorkspace: prioritizeFocusedWorkspace
+        )
 
         return AeroSpaceSnapshot(
             workspaceName: workspaceName,
@@ -84,14 +88,19 @@ actor AeroSpaceClient {
         return Self.parseFocusedMonitorNameJSON(json)
     }
 
-    private func workspaces(focusedWorkspaceName: String, focusedWindowId: String?) async throws -> [WorkspaceGroup] {
+    private func workspaces(
+        focusedWorkspaceName: String,
+        focusedWindowId: String?,
+        prioritizeFocusedWorkspace: Bool
+    ) async throws -> [WorkspaceGroup] {
         let format = "%{window-id}\t%{app-name}\t%{window-title}\t%{workspace}\t%{app-bundle-id}"
         guard let output = try await runAeroSpace(arguments: ["list-windows", "--all", "--format", format], allowFailure: false) else {
             throw AeroSpaceClientError.commandFailed("AeroSpace returned no window data.")
         }
         return Self.groupWorkspaces(
             from: try Self.parseWindowsTSV(output, focusedWindowId: focusedWindowId),
-            focusedWorkspaceName: focusedWorkspaceName
+            focusedWorkspaceName: focusedWorkspaceName,
+            prioritizeFocusedWorkspace: prioritizeFocusedWorkspace
         )
     }
 
@@ -213,7 +222,11 @@ extension AeroSpaceClient {
         }
     }
 
-    static func groupWorkspaces(from windows: [WindowItem], focusedWorkspaceName: String) -> [WorkspaceGroup] {
+    static func groupWorkspaces(
+        from windows: [WindowItem],
+        focusedWorkspaceName: String,
+        prioritizeFocusedWorkspace: Bool
+    ) -> [WorkspaceGroup] {
         let grouped = Dictionary(grouping: windows, by: \.workspaceName)
 
         var workspaces = grouped.map { workspaceName, windows in
@@ -235,7 +248,7 @@ extension AeroSpaceClient {
         }
 
         return workspaces.sorted { lhs, rhs in
-            if lhs.isFocused != rhs.isFocused {
+            if prioritizeFocusedWorkspace, lhs.isFocused != rhs.isFocused {
                 return lhs.isFocused && !rhs.isFocused
             }
             return lhs.workspaceName.localizedStandardCompare(rhs.workspaceName) == .orderedAscending

@@ -12,9 +12,11 @@ This is an early release MVP. It now ships as a GitHub Releases DMG and can stil
 - Highlights the focused workspace and focused window
 - Lists windows inside each workspace with optional app icons
 - Lets you click a row to focus that window through the AeroSpace CLI
+- Adds a menu bar item for show/hide, refresh, and quit
 - Polls AeroSpace every second by default
 - Supports a localhost refresh hook for lower-latency updates
 - Detects whether your AeroSpace left gap is large enough to avoid overlap
+- Lets you keep workspace positions stable instead of moving the active one to the top
 
 ## Why It Exists
 
@@ -27,7 +29,7 @@ Before you try it, the current behavior is worth stating clearly:
 - The sidebar is anchored to the left edge of the main monitor
 - The clean layout depends on an AeroSpace `outer.left` gap reservation
 - If the gap is missing or too small, AeroMux falls back to a floating overlay
-- There is no menu bar item or Preferences window yet
+- There is no Preferences window yet
 - Release DMGs are currently ad hoc signed but not notarized
 
 ## Requirements
@@ -188,7 +190,7 @@ Check the basics first:
 
 - Main monitor only
 - Left sidebar only
-- No menu bar control or in-app quit flow yet
+- No Preferences window yet
 - Release builds are not notarized yet
 - No published compatibility matrix yet for Intel Macs or multiple AeroSpace versions
 

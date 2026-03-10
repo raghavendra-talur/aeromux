@@ -66,6 +66,14 @@ final class SidebarWindowController: NSWindowController, NSWindowDelegate {
         window.orderFrontRegardless()
     }
 
+    func hideWindow() {
+        window?.orderOut(nil)
+    }
+
+    var isVisible: Bool {
+        window?.isVisible ?? false
+    }
+
     func windowDidChangeScreen(_ notification: Notification) {
         updateFrame()
     }
