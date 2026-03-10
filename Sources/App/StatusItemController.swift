@@ -13,6 +13,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     private let toggleSidebarItem = NSMenuItem()
     private let sidebarWidthItem = NSMenuItem()
     private let reorderWorkspacesItem = NSMenuItem()
+    private let compactModeItem = NSMenuItem()
     private let launchAtLoginItem = NSMenuItem()
     private let refreshItem = NSMenuItem()
     private let quitItem = NSMenuItem()
@@ -63,6 +64,10 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         reorderWorkspacesItem.target = self
         reorderWorkspacesItem.action = #selector(toggleWorkspaceReordering)
 
+        compactModeItem.title = "Compact Mode"
+        compactModeItem.target = self
+        compactModeItem.action = #selector(toggleCompactMode)
+
         launchAtLoginItem.title = "Launch at Login"
         launchAtLoginItem.target = self
         launchAtLoginItem.action = #selector(toggleLaunchAtLogin)
@@ -79,6 +84,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             toggleSidebarItem,
             sidebarWidthItem,
             reorderWorkspacesItem,
+            compactModeItem,
             launchAtLoginItem,
             .separator(),
             refreshItem,
@@ -91,6 +97,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         toggleSidebarItem.title = windowController.isVisible ? "Hide Sidebar" : "Show Sidebar"
         sidebarWidthItem.title = "Sidebar Width: \(Int(settings.sidebarWidth)) px"
         reorderWorkspacesItem.state = settings.reordersFocusedWorkspaceToTop ? .on : .off
+        compactModeItem.state = settings.compactMode ? .on : .off
         launchAtLoginItem.state = settings.launchesAtLogin ? .on : .off
     }
 
@@ -109,6 +116,13 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         settings.reordersFocusedWorkspaceToTop.toggle()
         settings.persist()
         refreshCoordinator.requestRefresh(reason: .manual)
+        updateMenuState()
+    }
+
+    @objc
+    private func toggleCompactMode() {
+        settings.compactMode.toggle()
+        settings.persist()
         updateMenuState()
     }
 

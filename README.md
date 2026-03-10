@@ -10,10 +10,11 @@ This is an early release MVP. It now ships as a GitHub Releases DMG and can stil
 
 - Shows non-empty AeroSpace workspaces in a persistent left sidebar
 - Highlights the focused workspace and focused window
-- Lists windows inside each workspace with optional app icons
+- Lists windows inside each workspace by app name
 - Lets you click a row to focus that window through the AeroSpace CLI
 - Adds a menu bar item for show/hide, refresh, and quit
 - Lets you change the sidebar width from the menu bar
+- Lets you enable compact mode from the menu bar
 - Lets you enable launch at login from the menu bar
 - Polls AeroSpace every second by default
 - Supports a localhost refresh hook for lower-latency updates
@@ -141,6 +142,7 @@ The file is created automatically on first run. Current keys:
 
 ```json
 {
+  "compactMode": false,
   "launchAtLogin": false,
   "pinActiveWorkspaceFirst": false,
   "sidebarWidth": 260
@@ -149,7 +151,8 @@ The file is created automatically on first run. Current keys:
 
 Behavior:
 
-- `sidebarWidth` is the sidebar width in pixels and is clamped to whole numbers between `180` and `600`
+- `sidebarWidth` is the sidebar width in pixels and is clamped to whole numbers between `100` and `600`
+- `compactMode` enables a denser sidebar layout with slightly smaller text
 - `pinActiveWorkspaceFirst` controls whether the focused workspace is moved to the top
 - `launchAtLogin` controls whether AeroMux asks macOS to launch it at login
 - changes made in the file are picked up the next time AeroMux launches

@@ -102,10 +102,7 @@ extension WorkspaceGroup {
         return nil
     }
 
-    var detailLine: String {
-        if let descriptionOverride {
-            return descriptionOverride
-        }
-        return "\(windows.count) window\(windows.count == 1 ? "" : "s")"
+    var detailLine: String? {
+        descriptionOverride
     }
 }

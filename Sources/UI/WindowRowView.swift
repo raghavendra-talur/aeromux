@@ -2,44 +2,27 @@ import SwiftUI
 
 struct WindowRowView: View {
     let item: WindowItem
-    let showsIcon: Bool
+    let isCompact: Bool
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .center, spacing: 8) {
             Circle()
                 .fill(item.isFocused ? Color.green : Color.clear)
                 .overlay(
                     Circle()
                         .stroke(item.isFocused ? Color.green : Color.white.opacity(0.35), lineWidth: 1)
                 )
-                .frame(width: 10, height: 10)
-                .padding(.top, 5)
+                .frame(width: 8, height: 8)
 
-            if showsIcon, let icon = item.resolvedIcon {
-                Image(nsImage: icon)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 18, height: 18)
-                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-                    .padding(.top, 2)
-            }
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(item.appName)
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-
-                Text(item.windowTitle.isEmpty ? "Untitled window" : item.windowTitle)
-                    .font(.system(size: 12, weight: .regular, design: .rounded))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-            }
+            Text(item.appName)
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
 
             Spacer(minLength: 0)
         }
-        .padding(12)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 7)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)

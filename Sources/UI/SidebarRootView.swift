@@ -12,7 +12,7 @@ struct SidebarRootView: View {
             VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
                 .ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 12) {
                 header
                 if let integrationMessage = stateStore.state.integrationStatus.message {
                     integrationWarning(message: integrationMessage)
@@ -20,8 +20,8 @@ struct SidebarRootView: View {
                 content
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 18)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 12)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .preferredColorScheme(settings.usesDarkAppearance ? .dark : .light)
@@ -33,21 +33,17 @@ struct SidebarRootView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Text("AeroMux")
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .font(.system(size: 10, weight: .semibold, design: .rounded))
                 .foregroundStyle(.secondary)
-
-            Text("Active: \(stateStore.state.focusedWorkspaceGroup?.displayTitle ?? stateStore.state.workspaceName)")
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-                .lineLimit(1)
 
             HStack(spacing: 6) {
                 Text("\(stateStore.state.visibleWorkspaceCount) task\(stateStore.state.visibleWorkspaceCount == 1 ? "" : "s")")
                 Text("•")
                 Text("\(stateStore.state.totalWindowCount) window\(stateStore.state.totalWindowCount == 1 ? "" : "s")")
             }
-            .font(.system(size: 12, weight: .medium, design: .rounded))
+            .font(.system(size: 10, weight: .medium, design: .rounded))
             .foregroundStyle(.secondary)
         }
     }
@@ -63,11 +59,11 @@ struct SidebarRootView: View {
             stateView(title: "No windows open", message: "Open a window in any AeroSpace workspace to populate the task rail.")
         case .ready:
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 10) {
+                LazyVStack(alignment: .leading, spacing: 6) {
                     ForEach(stateStore.state.workspaces) { workspace in
                         WorkspaceSectionView(
                             workspace: workspace,
-                            showsIcons: settings.showsAppIcons,
+                            isCompact: settings.compactMode,
                             focusService: focusService,
                             allWorkspaceNames: stateStore.state.workspaces.map(\.workspaceName),
                             workspaceMemoryStore: workspaceMemoryStore,
@@ -75,17 +71,17 @@ struct SidebarRootView: View {
                         )
                     }
                 }
-                .padding(.top, 4)
+                .padding(.top, 2)
             }
         }
     }
 
     private var loadingView: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             ProgressView()
                 .controlSize(.small)
             Text("Refreshing workspace")
-                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .font(.system(size: 11, weight: .medium, design: .rounded))
         }
         .foregroundStyle(.secondary)
     }
@@ -93,16 +89,16 @@ struct SidebarRootView: View {
     private func integrationWarning(message: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("AeroSpace Integration")
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.system(size: 10, weight: .semibold, design: .rounded))
             Text(message)
-                .font(.system(size: 12, weight: .regular, design: .rounded))
+                .font(.system(size: 10, weight: .regular, design: .rounded))
                 .foregroundStyle(.secondary)
             Text("Expected: `outer.left = [{ monitor.main = \(Int(settings.sidebarWidth)) }, 0]`")
-                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .font(.system(size: 10, weight: .medium, design: .rounded))
                 .foregroundStyle(.secondary)
                 .textSelection(.enabled)
         }
-        .padding(12)
+        .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -117,12 +113,12 @@ struct SidebarRootView: View {
     private func stateView(title: String, message: String) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
             Text(message)
-                .font(.system(size: 13, weight: .regular, design: .rounded))
+                .font(.system(size: 11, weight: .regular, design: .rounded))
                 .foregroundStyle(.secondary)
         }
-        .padding(14)
+        .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)

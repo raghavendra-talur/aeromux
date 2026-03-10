@@ -2,7 +2,7 @@ import SwiftUI
 
 struct WorkspaceSectionView: View {
     let workspace: WorkspaceGroup
-    let showsIcons: Bool
+    let isCompact: Bool
     let focusService: FocusService
     let allWorkspaceNames: [String]
     let workspaceMemoryStore: WorkspaceMemoryStore
@@ -11,27 +11,32 @@ struct WorkspaceSectionView: View {
     @State private var isEditorPresented = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline, spacing: 10) {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Circle()
                     .fill(workspace.isFocused ? Color.green : Color.clear)
                     .overlay(
                         Circle()
                             .stroke(workspace.isFocused ? Color.green : Color.white.opacity(0.35), lineWidth: 1)
                     )
-                    .frame(width: 10, height: 10)
+                    .frame(width: 8, height: 8)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(workspace.displayTitle)
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .lineLimit(1)
                     if let metadataLine = workspace.metadataLine {
                         Text(metadataLine)
-                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .font(.system(size: 9, weight: .medium, design: .rounded))
                             .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
-                    Text(workspace.detailLine)
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
-                        .foregroundStyle(.secondary)
+                    if let detailLine = workspace.detailLine {
+                        Text(detailLine)
+                            .font(.system(size: 9, weight: .medium, design: .rounded))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                 }
 
                 Spacer(minLength: 0)
@@ -40,7 +45,7 @@ struct WorkspaceSectionView: View {
                     isEditorPresented = true
                 } label: {
                     Image(systemName: "square.and.pencil")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
@@ -49,25 +54,25 @@ struct WorkspaceSectionView: View {
 
             if workspace.windows.isEmpty {
                 Text("No windows in this workspace")
-                    .font(.system(size: 12, weight: .regular, design: .rounded))
+                    .font(.system(size: 10, weight: .regular, design: .rounded))
                     .foregroundStyle(.secondary)
-                    .padding(.leading, 20)
+                    .padding(.leading, 16)
             } else {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 4) {
                     ForEach(workspace.windows) { item in
                         Button {
                             Task {
                                 await focusService.focus(windowId: item.windowId)
                             }
                         } label: {
-                            WindowRowView(item: item, showsIcon: showsIcons)
+                            WindowRowView(item: item, isCompact: isCompact)
                         }
                         .buttonStyle(.plain)
                     }
                 }
             }
         }
-        .padding(14)
+        .padding(8)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)

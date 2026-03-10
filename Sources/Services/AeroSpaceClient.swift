@@ -277,10 +277,6 @@ extension AeroSpaceClient {
 
     private static func sortWindows(_ windows: [WindowItem]) -> [WindowItem] {
         windows.sorted { lhs, rhs in
-            if lhs.isFocused != rhs.isFocused {
-                return lhs.isFocused && !rhs.isFocused
-            }
-
             let appOrder = lhs.appName.localizedStandardCompare(rhs.appName)
             if appOrder != .orderedSame {
                 return appOrder == .orderedAscending

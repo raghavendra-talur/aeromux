@@ -8,16 +8,16 @@ final class SettingsStore: ObservableObject {
     }
 
     static let defaultSidebarWidth: CGFloat = 260
-    static let sidebarWidthRange: ClosedRange<CGFloat> = 180 ... 600
+    static let sidebarWidthRange: ClosedRange<CGFloat> = 100 ... 600
 
     @Published var sidebarWidth: CGFloat
     @Published var monitorMode: MonitorMode
     @Published var pollInterval: TimeInterval
-    @Published var showsAppIcons: Bool
     @Published var usesDarkAppearance: Bool
     @Published var enableDebugLogging: Bool
     @Published var reordersFocusedWorkspaceToTop: Bool
     @Published var launchesAtLogin: Bool
+    @Published var compactMode: Bool
 
     private let defaults: UserDefaults
     private let fileManager: FileManager
@@ -58,13 +58,13 @@ final class SettingsStore: ObservableObject {
         )
         monitorMode = MonitorMode(rawValue: defaults.string(forKey: Keys.monitorMode) ?? "") ?? .main
         pollInterval = defaults.object(forKey: Keys.pollInterval) as? TimeInterval ?? 1.0
-        showsAppIcons = defaults.object(forKey: Keys.showsAppIcons) as? Bool ?? true
         usesDarkAppearance = defaults.object(forKey: Keys.usesDarkAppearance) as? Bool ?? true
         enableDebugLogging = defaults.object(forKey: Keys.enableDebugLogging) as? Bool ?? false
         reordersFocusedWorkspaceToTop = persistedConfig?.pinActiveWorkspaceFirst
             ?? defaults.object(forKey: Keys.reordersFocusedWorkspaceToTop) as? Bool
             ?? false
         launchesAtLogin = persistedConfig?.launchAtLogin ?? false
+        compactMode = persistedConfig?.compactMode ?? false
 
         if shouldBootstrapConfig {
             persistConfig()
@@ -78,9 +78,9 @@ final class SettingsStore: ObservableObject {
         removeLegacyConfigDefaults()
         defaults.set(monitorMode.rawValue, forKey: Keys.monitorMode)
         defaults.set(pollInterval, forKey: Keys.pollInterval)
-        defaults.set(showsAppIcons, forKey: Keys.showsAppIcons)
         defaults.set(usesDarkAppearance, forKey: Keys.usesDarkAppearance)
         defaults.set(enableDebugLogging, forKey: Keys.enableDebugLogging)
+        defaults.removeObject(forKey: Keys.showsAppIcons)
     }
 
     func setSidebarWidth(_ width: CGFloat) {
@@ -97,7 +97,8 @@ final class SettingsStore: ObservableObject {
             let payload = PersistedConfig(
                 sidebarWidth: Double(sidebarWidth),
                 pinActiveWorkspaceFirst: reordersFocusedWorkspaceToTop,
-                launchAtLogin: launchesAtLogin
+                launchAtLogin: launchesAtLogin,
+                compactMode: compactMode
             )
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -138,6 +139,7 @@ final class SettingsStore: ObservableObject {
         var sidebarWidth: Double?
         var pinActiveWorkspaceFirst: Bool?
         var launchAtLogin: Bool?
+        var compactMode: Bool?
     }
 
     private enum Keys {
