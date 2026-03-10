@@ -34,7 +34,7 @@ struct SidebarRootView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Tasks")
+            Text("AeroMux")
                 .font(.system(size: 11, weight: .semibold, design: .rounded))
                 .foregroundStyle(.secondary)
 
@@ -42,21 +42,10 @@ struct SidebarRootView: View {
                 .font(.system(size: 24, weight: .bold, design: .rounded))
                 .lineLimit(1)
 
-            if let metadataLine = stateStore.state.focusedWorkspaceGroup?.metadataLine {
-                Text(metadataLine)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-
             HStack(spacing: 6) {
                 Text("\(stateStore.state.visibleWorkspaceCount) task\(stateStore.state.visibleWorkspaceCount == 1 ? "" : "s")")
                 Text("•")
                 Text("\(stateStore.state.totalWindowCount) window\(stateStore.state.totalWindowCount == 1 ? "" : "s")")
-                if let monitorName = stateStore.state.monitorName {
-                    Text("•")
-                    Text(monitorName)
-                }
             }
             .font(.system(size: 12, weight: .medium, design: .rounded))
             .foregroundStyle(.secondary)

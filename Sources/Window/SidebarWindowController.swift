@@ -10,6 +10,7 @@ final class SidebarWindowController: NSWindowController, NSWindowDelegate {
     private let workspaceMemoryStore: WorkspaceMemoryStore
     private let refreshCoordinator: RefreshCoordinator
     private var stateObserver: AnyCancellable?
+    private var settingsObserver: AnyCancellable?
 
     init(
         settings: SettingsStore,
@@ -58,6 +59,11 @@ final class SidebarWindowController: NSWindowController, NSWindowDelegate {
         stateObserver = stateStore.$state.sink { [weak self] state in
             self?.applyPresentation(state.integrationStatus.presentation)
         }
+        settingsObserver = settings.$sidebarWidth
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.updateFrame()
+            }
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleScreenChange),

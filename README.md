@@ -13,10 +13,12 @@ This is an early release MVP. It now ships as a GitHub Releases DMG and can stil
 - Lists windows inside each workspace with optional app icons
 - Lets you click a row to focus that window through the AeroSpace CLI
 - Adds a menu bar item for show/hide, refresh, and quit
+- Lets you change the sidebar width from the menu bar
 - Polls AeroSpace every second by default
 - Supports a localhost refresh hook for lower-latency updates
 - Detects whether your AeroSpace left gap is large enough to avoid overlap
 - Lets you keep workspace positions stable instead of moving the active one to the top
+- Stores sidebar settings in `~/.config/aeromux/settings.json`
 - Supports local workspace titles/descriptions from `~/.config/aeromux/workspaces.json`
 
 ## Why It Exists
@@ -104,6 +106,8 @@ To avoid the sidebar covering tiled windows, reserve space on the left side of y
 
 `260` matches the current default sidebar width. If you use a different width in code later, keep the two values aligned.
 
+You can change the width from the AeroMux menu bar item or by editing `settings.json` directly. If you increase the width, make sure `outer.left` is at least that large.
+
 When AeroMux can confirm that the reserved left gap is wide enough, it drops to a normal window level. If it cannot confirm that reservation, or the gap is too small, it stays floating and shows a warning in the UI.
 
 ## Optional Refresh Hook
@@ -117,6 +121,36 @@ curl -fsS -X POST http://127.0.0.1:39173/refresh >/dev/null 2>&1 || true
 A helper script is included at `scripts/aerospace-refresh-hook.sh`.
 
 The refresh listener binds only to `127.0.0.1:39173`.
+
+## Settings File
+
+AeroMux stores sidebar-specific settings in:
+
+```bash
+~/.config/aeromux/settings.json
+```
+
+If `XDG_CONFIG_HOME` is set, AeroMux uses:
+
+```bash
+$XDG_CONFIG_HOME/aeromux/settings.json
+```
+
+The file is created automatically on first run. Current keys:
+
+```json
+{
+  "pinActiveWorkspaceFirst": false,
+  "sidebarWidth": 260
+}
+```
+
+Behavior:
+
+- `sidebarWidth` is the sidebar width in pixels and is clamped to whole numbers between `180` and `600`
+- `pinActiveWorkspaceFirst` controls whether the focused workspace is moved to the top
+- changes made in the file are picked up the next time AeroMux launches
+- changing the width also means AeroSpace `outer.left` should be at least that wide
 
 ## Workspace Memory File
 
@@ -201,6 +235,8 @@ Then confirm your config contains a left gap reservation like:
 [gaps]
     outer.left = [{ monitor.main = 260 }, 0]
 ```
+
+If you changed `sidebarWidth` in `settings.json` or from the menu bar, use that number instead of `260`.
 
 ### Clicking A Row Does Not Focus A Window
 

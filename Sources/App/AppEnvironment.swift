@@ -15,7 +15,7 @@ final class AppEnvironment {
 
     init() {
         logger = AppLogger()
-        settings = SettingsStore()
+        settings = SettingsStore(logger: logger)
         workspaceMemoryStore = WorkspaceMemoryStore(logger: logger)
         let aerospaceExecutablePath = AeroSpaceExecutableResolver.resolve()
         let commandRunner = ProcessCommandRunner(logger: logger)

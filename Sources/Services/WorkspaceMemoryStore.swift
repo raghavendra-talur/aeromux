@@ -59,22 +59,8 @@ actor WorkspaceMemoryStore {
     }
 
     private func configFileURL() throws -> URL {
-        let configDirectory = try configDirectoryURL()
-        if !fileManager.fileExists(atPath: configDirectory.path) {
-            try fileManager.createDirectory(at: configDirectory, withIntermediateDirectories: true)
-        }
-
-        return configDirectory.appendingPathComponent("workspaces.json")
-    }
-
-    private func configDirectoryURL() throws -> URL {
-        if let xdgConfigHome = ProcessInfo.processInfo.environment["XDG_CONFIG_HOME"], !xdgConfigHome.isEmpty {
-            return URL(fileURLWithPath: xdgConfigHome).appendingPathComponent("aeromux")
-        }
-
-        return fileManager.homeDirectoryForCurrentUser
-            .appendingPathComponent(".config")
-            .appendingPathComponent("aeromux")
+        _ = try AeroMuxConfigPaths.ensureConfigDirectoryExists(fileManager: fileManager)
+        return AeroMuxConfigPaths.workspaceMemoryFileURL(fileManager: fileManager)
     }
 
     private func normalize(_ value: String?) -> String? {

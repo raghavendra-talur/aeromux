@@ -1,4 +1,5 @@
 import AppKit
+import Foundation
 
 @MainActor
 final class StatusItemController: NSObject, NSMenuDelegate {
@@ -9,6 +10,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     private let menu = NSMenu()
     private let toggleSidebarItem = NSMenuItem()
+    private let sidebarWidthItem = NSMenuItem()
     private let reorderWorkspacesItem = NSMenuItem()
     private let refreshItem = NSMenuItem()
     private let quitItem = NSMenuItem()
@@ -46,6 +48,9 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         toggleSidebarItem.target = self
         toggleSidebarItem.action = #selector(toggleSidebar)
 
+        sidebarWidthItem.target = self
+        sidebarWidthItem.action = #selector(editSidebarWidth)
+
         reorderWorkspacesItem.title = "Pin Active Workspace First"
         reorderWorkspacesItem.target = self
         reorderWorkspacesItem.action = #selector(toggleWorkspaceReordering)
@@ -60,6 +65,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
         menu.items = [
             toggleSidebarItem,
+            sidebarWidthItem,
             reorderWorkspacesItem,
             .separator(),
             refreshItem,
@@ -70,6 +76,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     private func updateMenuState() {
         toggleSidebarItem.title = windowController.isVisible ? "Hide Sidebar" : "Show Sidebar"
+        sidebarWidthItem.title = "Sidebar Width: \(Int(settings.sidebarWidth)) px"
         reorderWorkspacesItem.state = settings.reordersFocusedWorkspaceToTop ? .on : .off
     }
 
@@ -87,6 +94,67 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     private func toggleWorkspaceReordering() {
         settings.reordersFocusedWorkspaceToTop.toggle()
         settings.persist()
+        refreshCoordinator.requestRefresh(reason: .manual)
+        updateMenuState()
+    }
+
+    @objc
+    private func editSidebarWidth() {
+        DispatchQueue.main.async { [weak self] in
+            self?.presentSidebarWidthEditor()
+        }
+    }
+
+    private func presentSidebarWidthEditor() {
+        NSApp.activate(ignoringOtherApps: true)
+
+        let alert = NSAlert()
+        alert.messageText = "Sidebar Width"
+        alert.informativeText = "Enter the sidebar width in pixels. Keep AeroSpace `outer.left` at least this wide."
+
+        let inputField = NSTextField(string: "\(Int(settings.sidebarWidth))")
+        inputField.frame = NSRect(x: 0, y: 0, width: 220, height: 24)
+        alert.accessoryView = inputField
+        alert.addButton(withTitle: "Save")
+        alert.addButton(withTitle: "Cancel")
+        alert.window.initialFirstResponder = inputField
+        alert.window.level = .modalPanel
+        alert.window.center()
+
+        guard alert.runModal() == .alertFirstButtonReturn else {
+            return
+        }
+
+        let rawValue = inputField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let width = Double(rawValue) else {
+            presentInvalidSidebarWidthAlert()
+            return
+        }
+
+        let minWidth = Double(SettingsStore.sidebarWidthRange.lowerBound)
+        let maxWidth = Double(SettingsStore.sidebarWidthRange.upperBound)
+        guard width.rounded() == width, width >= minWidth, width <= maxWidth else {
+            presentInvalidSidebarWidthAlert()
+            return
+        }
+
+        applySidebarWidthChange(CGFloat(width))
+    }
+
+    private func presentInvalidSidebarWidthAlert() {
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        let minWidth = Int(SettingsStore.sidebarWidthRange.lowerBound)
+        let maxWidth = Int(SettingsStore.sidebarWidthRange.upperBound)
+        alert.messageText = "Invalid Sidebar Width"
+        alert.informativeText = "Enter a whole number between \(minWidth) and \(maxWidth) pixels."
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
+    private func applySidebarWidthChange(_ width: CGFloat) {
+        settings.setSidebarWidth(width)
+        windowController.showWindow()
         refreshCoordinator.requestRefresh(reason: .manual)
         updateMenuState()
     }
