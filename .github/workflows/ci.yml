@@ -12,5 +12,16 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Select Xcode 16
+        run: |
+          DEVELOPER_APP="$(find /Applications -maxdepth 1 -type d -name 'Xcode_16*.app' | sort | tail -n 1)"
+          if [[ -z "${DEVELOPER_APP}" ]]; then
+            echo "No Xcode 16 installation found on runner." >&2
+            exit 1
+          fi
+          sudo xcode-select -s "${DEVELOPER_APP}/Contents/Developer"
+          xcodebuild -version
+          swift --version
+
       - name: Build
         run: swift build
