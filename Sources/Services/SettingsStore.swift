@@ -17,6 +17,7 @@ final class SettingsStore: ObservableObject {
     @Published var usesDarkAppearance: Bool
     @Published var enableDebugLogging: Bool
     @Published var reordersFocusedWorkspaceToTop: Bool
+    @Published var launchesAtLogin: Bool
 
     private let defaults: UserDefaults
     private let fileManager: FileManager
@@ -63,6 +64,7 @@ final class SettingsStore: ObservableObject {
         reordersFocusedWorkspaceToTop = persistedConfig?.pinActiveWorkspaceFirst
             ?? defaults.object(forKey: Keys.reordersFocusedWorkspaceToTop) as? Bool
             ?? false
+        launchesAtLogin = persistedConfig?.launchAtLogin ?? false
 
         if shouldBootstrapConfig {
             persistConfig()
@@ -94,7 +96,8 @@ final class SettingsStore: ObservableObject {
 
             let payload = PersistedConfig(
                 sidebarWidth: Double(sidebarWidth),
-                pinActiveWorkspaceFirst: reordersFocusedWorkspaceToTop
+                pinActiveWorkspaceFirst: reordersFocusedWorkspaceToTop,
+                launchAtLogin: launchesAtLogin
             )
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -134,6 +137,7 @@ final class SettingsStore: ObservableObject {
     private struct PersistedConfig: Codable {
         var sidebarWidth: Double?
         var pinActiveWorkspaceFirst: Bool?
+        var launchAtLogin: Bool?
     }
 
     private enum Keys {

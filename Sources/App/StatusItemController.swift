@@ -4,6 +4,7 @@ import Foundation
 @MainActor
 final class StatusItemController: NSObject, NSMenuDelegate {
     private let settings: SettingsStore
+    private let launchAtLoginService: LaunchAtLoginService
     private let refreshCoordinator: RefreshCoordinator
     private let windowController: SidebarWindowController
 
@@ -12,11 +13,18 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     private let toggleSidebarItem = NSMenuItem()
     private let sidebarWidthItem = NSMenuItem()
     private let reorderWorkspacesItem = NSMenuItem()
+    private let launchAtLoginItem = NSMenuItem()
     private let refreshItem = NSMenuItem()
     private let quitItem = NSMenuItem()
 
-    init(settings: SettingsStore, refreshCoordinator: RefreshCoordinator, windowController: SidebarWindowController) {
+    init(
+        settings: SettingsStore,
+        launchAtLoginService: LaunchAtLoginService,
+        refreshCoordinator: RefreshCoordinator,
+        windowController: SidebarWindowController
+    ) {
         self.settings = settings
+        self.launchAtLoginService = launchAtLoginService
         self.refreshCoordinator = refreshCoordinator
         self.windowController = windowController
         super.init()
@@ -55,6 +63,10 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         reorderWorkspacesItem.target = self
         reorderWorkspacesItem.action = #selector(toggleWorkspaceReordering)
 
+        launchAtLoginItem.title = "Launch at Login"
+        launchAtLoginItem.target = self
+        launchAtLoginItem.action = #selector(toggleLaunchAtLogin)
+
         refreshItem.title = "Refresh Now"
         refreshItem.target = self
         refreshItem.action = #selector(refreshNow)
@@ -67,6 +79,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             toggleSidebarItem,
             sidebarWidthItem,
             reorderWorkspacesItem,
+            launchAtLoginItem,
             .separator(),
             refreshItem,
             .separator(),
@@ -78,6 +91,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         toggleSidebarItem.title = windowController.isVisible ? "Hide Sidebar" : "Show Sidebar"
         sidebarWidthItem.title = "Sidebar Width: \(Int(settings.sidebarWidth)) px"
         reorderWorkspacesItem.state = settings.reordersFocusedWorkspaceToTop ? .on : .off
+        launchAtLoginItem.state = settings.launchesAtLogin ? .on : .off
     }
 
     @objc
@@ -96,6 +110,24 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         settings.persist()
         refreshCoordinator.requestRefresh(reason: .manual)
         updateMenuState()
+    }
+
+    @objc
+    private func toggleLaunchAtLogin() {
+        let desiredState = !settings.launchesAtLogin
+
+        do {
+            let resolvedStatus = try launchAtLoginService.apply(enabled: desiredState)
+            settings.launchesAtLogin = desiredState
+            settings.persist()
+            updateMenuState()
+
+            if desiredState, resolvedStatus == .requiresApproval {
+                presentLaunchAtLoginApprovalAlert()
+            }
+        } catch {
+            presentLaunchAtLoginErrorAlert(error)
+        }
     }
 
     @objc
@@ -148,6 +180,24 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         let maxWidth = Int(SettingsStore.sidebarWidthRange.upperBound)
         alert.messageText = "Invalid Sidebar Width"
         alert.informativeText = "Enter a whole number between \(minWidth) and \(maxWidth) pixels."
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
+    private func presentLaunchAtLoginApprovalAlert() {
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.messageText = "Launch at Login Requires Approval"
+        alert.informativeText = "macOS requires approval before AeroMux can launch at login. Review Login Items in System Settings if AeroMux does not start automatically."
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
+    private func presentLaunchAtLoginErrorAlert(_ error: Error) {
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.messageText = "Unable to Update Launch at Login"
+        alert.informativeText = error.localizedDescription
         alert.addButton(withTitle: "OK")
         alert.runModal()
     }

@@ -14,6 +14,7 @@ This is an early release MVP. It now ships as a GitHub Releases DMG and can stil
 - Lets you click a row to focus that window through the AeroSpace CLI
 - Adds a menu bar item for show/hide, refresh, and quit
 - Lets you change the sidebar width from the menu bar
+- Lets you enable launch at login from the menu bar
 - Polls AeroSpace every second by default
 - Supports a localhost refresh hook for lower-latency updates
 - Detects whether your AeroSpace left gap is large enough to avoid overlap
@@ -140,6 +141,7 @@ The file is created automatically on first run. Current keys:
 
 ```json
 {
+  "launchAtLogin": false,
   "pinActiveWorkspaceFirst": false,
   "sidebarWidth": 260
 }
@@ -149,6 +151,7 @@ Behavior:
 
 - `sidebarWidth` is the sidebar width in pixels and is clamped to whole numbers between `180` and `600`
 - `pinActiveWorkspaceFirst` controls whether the focused workspace is moved to the top
+- `launchAtLogin` controls whether AeroMux asks macOS to launch it at login
 - changes made in the file are picked up the next time AeroMux launches
 - changing the width also means AeroSpace `outer.left` should be at least that wide
 

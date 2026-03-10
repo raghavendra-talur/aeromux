@@ -12,11 +12,13 @@ final class AppEnvironment {
     let windowController: SidebarWindowController
     let statusItemController: StatusItemController
     let workspaceMemoryStore: WorkspaceMemoryStore
+    let launchAtLoginService: LaunchAtLoginService
 
     init() {
         logger = AppLogger()
         settings = SettingsStore(logger: logger)
         workspaceMemoryStore = WorkspaceMemoryStore(logger: logger)
+        launchAtLoginService = LaunchAtLoginService(logger: logger)
         let aerospaceExecutablePath = AeroSpaceExecutableResolver.resolve()
         let commandRunner = ProcessCommandRunner(logger: logger)
         let client = AeroSpaceClient(
@@ -55,6 +57,7 @@ final class AppEnvironment {
         )
         statusItemController = StatusItemController(
             settings: settings,
+            launchAtLoginService: launchAtLoginService,
             refreshCoordinator: refreshCoordinator,
             windowController: windowController
         )
@@ -65,6 +68,7 @@ final class AppEnvironment {
         if let appIcon = AppIconProvider.applicationIconImage() {
             NSApplication.shared.applicationIconImage = appIcon
         }
+        launchAtLoginService.sync(enabled: settings.launchesAtLogin)
         windowController.showWindow()
         statusItemController.start()
         bridgeServer.start()
