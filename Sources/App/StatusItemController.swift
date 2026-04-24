@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import KeyboardShortcuts
 
 @MainActor
 final class StatusItemController: NSObject, NSMenuDelegate {
@@ -15,6 +16,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     private let reorderWorkspacesItem = NSMenuItem()
     private let compactModeItem = NSMenuItem()
     private let launchAtLoginItem = NSMenuItem()
+    private let shortcutEditorItem = NSMenuItem()
     private let refreshItem = NSMenuItem()
     private let quitItem = NSMenuItem()
 
@@ -72,6 +74,10 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         launchAtLoginItem.target = self
         launchAtLoginItem.action = #selector(toggleLaunchAtLogin)
 
+        shortcutEditorItem.title = "Keyboard Shortcuts…"
+        shortcutEditorItem.target = self
+        shortcutEditorItem.action = #selector(openShortcutEditor)
+
         refreshItem.title = "Refresh Now"
         refreshItem.target = self
         refreshItem.action = #selector(refreshNow)
@@ -86,6 +92,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             reorderWorkspacesItem,
             compactModeItem,
             launchAtLoginItem,
+            shortcutEditorItem,
             .separator(),
             refreshItem,
             .separator(),
@@ -94,7 +101,12 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     }
 
     private func updateMenuState() {
-        toggleSidebarItem.title = windowController.isVisible ? "Hide Sidebar" : "Show Sidebar"
+        let baseTitle = windowController.isVisible ? "Hide Sidebar" : "Show Sidebar"
+        if let shortcut = KeyboardShortcuts.getShortcut(for: .toggleSidebar) {
+            toggleSidebarItem.title = "\(baseTitle)  \(shortcut)"
+        } else {
+            toggleSidebarItem.title = baseTitle
+        }
         sidebarWidthItem.title = "Sidebar Width: \(Int(settings.sidebarWidth)) px"
         reorderWorkspacesItem.state = settings.reordersFocusedWorkspaceToTop ? .on : .off
         compactModeItem.state = settings.compactMode ? .on : .off
@@ -103,12 +115,13 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     @objc
     private func toggleSidebar() {
-        if windowController.isVisible {
-            windowController.hideWindow()
-        } else {
-            windowController.showWindow()
-        }
+        windowController.toggle()
         updateMenuState()
+    }
+
+    @objc
+    private func openShortcutEditor() {
+        ShortcutEditorWindow.shared.show()
     }
 
     @objc

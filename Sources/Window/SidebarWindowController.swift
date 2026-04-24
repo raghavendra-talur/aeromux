@@ -88,6 +88,14 @@ final class SidebarWindowController: NSWindowController, NSWindowDelegate {
         window?.orderOut(nil)
     }
 
+    func toggle() {
+        if isVisible {
+            hideWindow()
+        } else {
+            showWindow()
+        }
+    }
+
     var isVisible: Bool {
         window?.isVisible ?? false
     }

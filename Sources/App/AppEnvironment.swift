@@ -11,6 +11,7 @@ final class AppEnvironment {
     let bridgeServer: RefreshBridgeServer
     let windowController: SidebarWindowController
     let statusItemController: StatusItemController
+    let shortcutCoordinator: ShortcutCoordinator
     let workspaceMemoryStore: WorkspaceMemoryStore
     let launchAtLoginService: LaunchAtLoginService
 
@@ -61,6 +62,10 @@ final class AppEnvironment {
             refreshCoordinator: refreshCoordinator,
             windowController: windowController
         )
+        shortcutCoordinator = ShortcutCoordinator(
+            windowController: windowController,
+            logger: logger
+        )
     }
 
     func start() {
@@ -71,6 +76,7 @@ final class AppEnvironment {
         launchAtLoginService.sync(enabled: settings.launchesAtLogin)
         windowController.showWindow()
         statusItemController.start()
+        shortcutCoordinator.start()
         bridgeServer.start()
         refreshCoordinator.start()
     }
@@ -78,6 +84,7 @@ final class AppEnvironment {
     func stop() {
         logger.info("app.stop")
         statusItemController.stop()
+        shortcutCoordinator.stop()
         bridgeServer.stop()
         refreshCoordinator.stop()
     }
