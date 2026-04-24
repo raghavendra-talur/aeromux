@@ -14,7 +14,7 @@ jobs:
 
       - name: Select Xcode 16
         run: |
-          DEVELOPER_APP="$(find /Applications -maxdepth 1 -type d -name 'Xcode_16*.app' | sort | tail -n 1)"
+          DEVELOPER_APP="$(find /Applications -maxdepth 1 -type d -name 'Xcode_16*.app' ! -name 'Xcode_16.app' | sort -V | tail -n 1)"
           if [[ -z "${DEVELOPER_APP}" ]]; then
             echo "No Xcode 16 installation found on runner." >&2
             exit 1
