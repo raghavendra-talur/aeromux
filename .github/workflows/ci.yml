@@ -6,7 +6,7 @@ on:
 
 jobs:
   swift-build:
-    runs-on: macos-14
+    runs-on: macos-15
 
     steps:
       - name: Check out repository

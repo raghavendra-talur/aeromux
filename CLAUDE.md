@@ -76,7 +76,7 @@ There is no test suite. There is no linting configuration.
 
 ## CI
 
-- **CI:** `.github/workflows/ci.yml` — runs `swift build` on push/PR using macOS 14 + Xcode 16
+- **CI:** `.github/workflows/ci.yml` — runs `swift build` on push/PR using macOS 15 + Xcode 16
 - **Release:** `.github/workflows/release.yml` — triggers on `v*` tags, builds DMG, publishes to GitHub Releases
 
 ## Packaging & Release
