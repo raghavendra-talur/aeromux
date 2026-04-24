@@ -24,6 +24,12 @@ swift build -c release --package-path "${ROOT_DIR}" >&2
 cp "${BIN_DIR}/${APP_NAME}" "${MACOS_DIR}/${APP_NAME}"
 chmod 755 "${MACOS_DIR}/${APP_NAME}"
 
+shopt -s nullglob
+for bundle in "${BIN_DIR}"/*.bundle; do
+  cp -R "${bundle}" "${RESOURCES_DIR}/"
+done
+shopt -u nullglob
+
 if [[ -f "${ROOT_DIR}/Packaging/AeroMux.icns" ]]; then
   cp "${ROOT_DIR}/Packaging/AeroMux.icns" "${RESOURCES_DIR}/AeroMux.icns"
 fi
