@@ -51,6 +51,24 @@ final class RefreshCoordinator {
         pollingTask?.cancel()
     }
 
+    nonisolated static let failureThreshold = 3
+    nonisolated static let maxPollInterval: TimeInterval = 30
+
+    /// Polling interval after `consecutiveFailures` failures: `base` until the
+    /// failure threshold, then doubling each further failure, capped at
+    /// `maxPollInterval`.
+    nonisolated static func pollingInterval(
+        base: TimeInterval,
+        consecutiveFailures: Int,
+        failureThreshold: Int = RefreshCoordinator.failureThreshold,
+        maxInterval: TimeInterval = RefreshCoordinator.maxPollInterval
+    ) -> TimeInterval {
+        guard consecutiveFailures >= failureThreshold else { return base }
+        let exponent = consecutiveFailures - failureThreshold + 1
+        let multiplier = pow(2.0, Double(exponent))
+        return min(base * multiplier, maxInterval)
+    }
+
     func requestRefresh(reason: TriggerReason) {
         logger.debug("refresh.request \(reason.rawValue)")
         scheduledRefresh?.cancel()
