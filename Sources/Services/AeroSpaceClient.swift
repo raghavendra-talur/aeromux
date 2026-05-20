@@ -112,8 +112,22 @@ actor AeroSpaceClient {
         let result: CommandResult
         do {
             result = try await commandRunner.run(aerospaceExecutablePath, arguments: arguments)
+        } catch let error as CommandError {
+            switch error {
+            case .launchFailure:
+                throw AeroSpaceClientError.binaryMissing
+            case .timedOut, .nonZeroExit:
+                logger.error("aerospace.error args=\(arguments.joined(separator: " ")) \(error.localizedDescription)")
+                if allowFailure {
+                    return nil
+                }
+                throw AeroSpaceClientError.commandFailed(error.localizedDescription)
+            }
         } catch {
-            throw AeroSpaceClientError.binaryMissing
+            if allowFailure {
+                return nil
+            }
+            throw AeroSpaceClientError.commandFailed(error.localizedDescription)
         }
 
         guard result.exitCode == 0 else {
