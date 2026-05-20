@@ -23,5 +23,10 @@ let package = Package(
                 "Resources",
             ]
         ),
+        .testTarget(
+            name: "AeroMuxTests",
+            dependencies: ["AeroMux"],
+            path: "Tests/AeroMuxTests"
+        ),
     ]
 )
