@@ -1,0 +1,111 @@
+name: AeroMux
+
+# This file is the source of truth for the Xcode app target. The
+# AeroMux.xcodeproj is generated from it with `xcodegen generate` and is NOT
+# checked in. Regenerate after editing: `make generate` (or `xcodegen`).
+#
+# Why an Xcode app target instead of plain `swift build`: the SwiftPM CLI build
+# emits a `Bundle.module` resource accessor that only looks beside the
+# executable bundle URL (the .app root, which code signing forbids). Xcode's
+# build instead copies SwiftPM resource bundles into Contents/Resources/ and
+# emits a candidate-search accessor that finds them there. That is what lets the
+# KeyboardShortcuts recorder load its localized strings without crashing in a
+# signed, notarized .app.
+
+options:
+  bundleIdPrefix: com.rtalur
+  deploymentTarget:
+    macOS: "13.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+packages:
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    exactVersion: 2.4.0
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.8"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Manual
+
+targets:
+  AeroMux:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - path: Sources
+        excludes:
+          - Resources
+      - path: Sources/Resources/AeroMuxStatusTemplate.png
+        buildPhase: resources
+      - path: Packaging/AeroMux.icns
+        buildPhase: resources
+    dependencies:
+      - package: KeyboardShortcuts
+    info:
+      path: Packaging/AeroMux-Info.generated.plist
+      properties:
+        CFBundleDevelopmentRegion: en
+        CFBundleDisplayName: AeroMux
+        CFBundleName: AeroMux
+        CFBundleIdentifier: com.rtalur.aeromux
+        CFBundlePackageType: APPL
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        CFBundleIconFile: AeroMux.icns
+        LSMinimumSystemVersion: "13.0"
+        LSUIElement: true
+        NSHighResolutionCapable: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.rtalur.aeromux
+        PRODUCT_NAME: AeroMux
+        COMBINE_HIDPI_IMAGES: YES
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+      configs:
+        # Debug stays locally-signed with no hardened runtime so the unit-test
+        # bundle can be injected into the app host (library validation off).
+        Debug:
+          CODE_SIGN_IDENTITY: "-"
+          ENABLE_HARDENED_RUNTIME: NO
+        # Release is the distribution build: Developer ID + hardened runtime,
+        # ready to notarize.
+        Release:
+          CODE_SIGN_IDENTITY: "Developer ID Application"
+          DEVELOPMENT_TEAM: RQ4U2AV56B
+          ENABLE_HARDENED_RUNTIME: YES
+
+  AeroMuxTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - Tests/AeroMuxTests
+    dependencies:
+      - target: AeroMux
+    settings:
+      base:
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/AeroMux.app/Contents/MacOS/AeroMux"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_IDENTITY: "-"
+        ENABLE_HARDENED_RUNTIME: NO
+
+schemes:
+  AeroMux:
+    build:
+      targets:
+        AeroMux: all
+        AeroMuxTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - AeroMuxTests
+    archive:
+      config: Release

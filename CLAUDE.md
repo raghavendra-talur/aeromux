@@ -8,30 +8,49 @@ AeroMux is a native macOS SwiftUI sidebar app (macOS 13+) that extends the [Aero
 
 ## Build & Development Commands
 
+The build is driven by Xcode (`xcodebuild`). The Xcode project is generated from
+`project.yml` by [XcodeGen](https://github.com/yonsm/XcodeGen) and is not checked
+in — `make` targets regenerate it as needed (`brew install xcodegen` first).
+
 ```bash
-# Build (debug)
-make build          # or: swift build
+# Regenerate AeroMux.xcodeproj from project.yml
+make generate
+
+# Build (debug, ad hoc signed)
+make build
 
 # Build (release)
-make build-release  # or: swift build -c release
+make build-release
 
-# Run from source
-make run            # or: swift run
+# Run the unit tests (xcodebuild test)
+make test
 
-# Create .app bundle
+# Build and launch the debug app
+make run
+
+# Create the Developer ID-signed .app bundle in dist/
 make app
 
-# Create DMG installer
+# Create the DMG (notarized if AEROMUX_NOTARY_* credentials are set)
 make dmg
 
 # Install to /Applications
 make install
 
-# Clean build artifacts
+# Clean build, packaging, and generated-project artifacts
 make clean
 ```
 
-There is no test suite. There is no linting configuration.
+Why Xcode and not plain `swift build`: the SwiftPM CLI emits a `Bundle.module`
+resource accessor that only resolves resources beside the `.app` bundle root
+(which code signing forbids), so the bundled KeyboardShortcuts recorder
+`fatalError`s at runtime in a packaged app. Xcode copies SwiftPM resource bundles
+into `Contents/Resources/` and emits a candidate-search accessor that finds them
+there. `Package.swift` is retained for dependency metadata, but the app is built
+through `AeroMux.xcodeproj`.
+
+Tests live in `Tests/AeroMuxTests/` and run via `make test`. There is no linting
+configuration.
 
 ## Architecture
 
@@ -76,13 +95,17 @@ There is no test suite. There is no linting configuration.
 
 ## CI
 
-- **CI:** `.github/workflows/ci.yml` — runs `swift build` on push/PR using macOS 15 + Xcode 16
-- **Release:** `.github/workflows/release.yml` — triggers on `v*` tags, builds DMG, publishes to GitHub Releases
+- **CI:** `.github/workflows/ci.yml` — generates the project and runs `xcodebuild build test` (Debug, ad hoc signed) on push/PR using macOS 15 + Xcode 16. No signing secrets.
+- **Releases are built locally**, not in CI, so the Developer ID private key never leaves the maintainer's machine. There is no release workflow.
 
 ## Packaging & Release
 
-See `docs/RELEASING.md`. Release scripts are in `scripts/`:
-- `build-release-app.sh` — creates `.app` bundle
-- `build-release-dmg.sh` — packages DMG with ad hoc signing
+See `docs/RELEASING.md`. Build config lives in `project.yml` (XcodeGen) and
+`Packaging/ExportOptions.plist`. Release scripts are in `scripts/`:
+- `build-release-app.sh` — `xcodebuild archive` + Developer ID `-exportArchive` → `dist/AeroMux.app`
+- `build-release-dmg.sh` — notarizes + staples the `.app`, builds the DMG, then notarizes + staples the DMG, when `AEROMUX_NOTARY_*` credentials are set
 
-App is ad hoc signed only (not notarized); macOS will show a warning on first launch.
+`make release` (with `VERSION=vX.Y.Z` and `AEROMUX_NOTARY_PROFILE`) builds the
+notarized DMG locally and publishes it via `gh release create`. Release builds
+are Developer ID-signed with hardened runtime and notarized; Debug builds remain
+ad hoc signed for local test injection.

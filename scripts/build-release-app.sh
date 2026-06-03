@@ -1,48 +1,49 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BUILD_DIR="${ROOT_DIR}/dist"
-APP_NAME="AeroMux"
-APP_DIR="${BUILD_DIR}/${APP_NAME}.app"
-CONTENTS_DIR="${APP_DIR}/Contents"
-MACOS_DIR="${CONTENTS_DIR}/MacOS"
-RESOURCES_DIR="${CONTENTS_DIR}/Resources"
-INFO_TEMPLATE="${ROOT_DIR}/Packaging/Info.plist"
-BIN_DIR="$(swift build -c release --package-path "${ROOT_DIR}" --show-bin-path)"
+# Build a Developer ID-signed, hardened-runtime AeroMux.app via Xcode.
+#
+# This replaces the old hand-assembled .app. The Xcode archive/export flow
+# embeds the KeyboardShortcuts resource bundle in Contents/Resources/ (where the
+# Xcode-generated Bundle.module accessor looks for it) and signs everything with
+# the Developer ID Application certificate, ready for notarization.
 
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DIST_DIR="${ROOT_DIR}/dist"
+ARCHIVE_PATH="${ROOT_DIR}/build/AeroMux.xcarchive"
+EXPORT_OPTIONS="${ROOT_DIR}/Packaging/ExportOptions.plist"
+
+# Raw version (e.g. "v0.1.8" or "v0.1.8-3-gabc1234-dirty" for dev builds).
 VERSION="${VERSION:-}"
 if [[ -z "${VERSION}" ]]; then
   VERSION="$(git -C "${ROOT_DIR}" describe --tags --always --dirty)"
 fi
 
-rm -rf "${APP_DIR}"
-mkdir -p "${MACOS_DIR}" "${RESOURCES_DIR}"
-
-swift build -c release --package-path "${ROOT_DIR}" >&2
-
-cp "${BIN_DIR}/${APP_NAME}" "${MACOS_DIR}/${APP_NAME}"
-chmod 755 "${MACOS_DIR}/${APP_NAME}"
-
-shopt -s nullglob
-for bundle in "${BIN_DIR}"/*.bundle; do
-  cp -R "${bundle}" "${RESOURCES_DIR}/"
-done
-shopt -u nullglob
-
-if [[ -f "${ROOT_DIR}/Packaging/AeroMux.icns" ]]; then
-  cp "${ROOT_DIR}/Packaging/AeroMux.icns" "${RESOURCES_DIR}/AeroMux.icns"
+# MARKETING_VERSION must be a dotted numeric string; derive it from the tag.
+MARKETING_VERSION="${VERSION#v}"
+MARKETING_VERSION="${MARKETING_VERSION%%-*}"
+if [[ ! "${MARKETING_VERSION}" =~ ^[0-9]+(\.[0-9]+){0,2}$ ]]; then
+  MARKETING_VERSION="0.0.0"
 fi
+# CFBundleVersion must be a monotonically increasing integer.
+BUILD_NUMBER="$(git -C "${ROOT_DIR}" rev-list --count HEAD 2>/dev/null || echo 1)"
 
-if [[ -f "${ROOT_DIR}/Sources/Resources/AeroMuxStatusTemplate.png" ]]; then
-  cp "${ROOT_DIR}/Sources/Resources/AeroMuxStatusTemplate.png" "${RESOURCES_DIR}/AeroMuxStatusTemplate.png"
-fi
+cd "${ROOT_DIR}"
+xcodegen generate >&2
+rm -rf "${ARCHIVE_PATH}" "${DIST_DIR}/AeroMux.app"
+mkdir -p "${DIST_DIR}"
 
-sed "s/__VERSION__/${VERSION}/g" "${INFO_TEMPLATE}" > "${CONTENTS_DIR}/Info.plist"
-printf 'APPL????' > "${CONTENTS_DIR}/PkgInfo"
+xcodebuild archive \
+  -project AeroMux.xcodeproj \
+  -scheme AeroMux \
+  -configuration Release \
+  -archivePath "${ARCHIVE_PATH}" \
+  MARKETING_VERSION="${MARKETING_VERSION}" \
+  CURRENT_PROJECT_VERSION="${BUILD_NUMBER}" >&2
 
-if command -v codesign >/dev/null 2>&1; then
-  codesign --force --deep --sign - "${APP_DIR}" >&2
-fi
+xcodebuild -exportArchive \
+  -archivePath "${ARCHIVE_PATH}" \
+  -exportPath "${DIST_DIR}" \
+  -exportOptionsPlist "${EXPORT_OPTIONS}" >&2
 
-printf '%s\n' "${APP_DIR}"
+printf '%s\n' "${DIST_DIR}/AeroMux.app"

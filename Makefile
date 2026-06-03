@@ -1,29 +1,52 @@
-.PHONY: help build build-release run app dmg install uninstall open-dist-app open-installed-app clean
+.PHONY: help generate build build-release test run app dmg release install uninstall open-dist-app open-installed-app clean
 
 APP_NAME := AeroMux
+PROJECT := $(APP_NAME).xcodeproj
+SCHEME := $(APP_NAME)
+DERIVED_DATA := DerivedData
 DIST_DIR := dist
 APP_BUNDLE := $(DIST_DIR)/$(APP_NAME).app
 APP_INSTALL_DIR ?= /Applications
 APP_INSTALL_PATH := $(APP_INSTALL_DIR)/$(APP_NAME).app
 VERSION ?= $(shell git describe --tags --always --dirty)
 
+XCODEBUILD := xcodebuild -project $(PROJECT) -scheme $(SCHEME) -derivedDataPath $(DERIVED_DATA)
+DEBUG_APP := $(DERIVED_DATA)/Build/Products/Debug/$(APP_NAME).app
+
 help: ## Show available targets
 	@awk 'BEGIN {FS = ":.*## "}; /^[a-zA-Z0-9_.-]+:.*## / {printf "%-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-build: ## Build the debug binary with SwiftPM
-	swift build
+# Regenerate the Xcode project from project.yml whenever the spec changes.
+$(PROJECT): project.yml
+	xcodegen generate
 
-build-release: ## Build the release binary with SwiftPM
-	swift build -c release
+generate: ## Regenerate the Xcode project from project.yml
+	xcodegen generate
 
-run: ## Run the app from source with SwiftPM
-	swift run
+build: $(PROJECT) ## Build the debug app with xcodebuild
+	$(XCODEBUILD) -configuration Debug build
 
-app: ## Build the macOS .app bundle into dist/
+build-release: $(PROJECT) ## Build the release app with xcodebuild
+	$(XCODEBUILD) -configuration Release build
+
+test: $(PROJECT) ## Run the unit tests with xcodebuild
+	$(XCODEBUILD) -configuration Debug test
+
+run: build ## Build and launch the debug app
+	open "$(DEBUG_APP)"
+
+app: ## Build the Developer ID-signed .app bundle into dist/
 	VERSION="$(VERSION)" ./scripts/build-release-app.sh
 
-dmg: ## Build the DMG into dist/
+dmg: ## Build (and notarize, if credentials are set) the DMG into dist/
 	VERSION="$(VERSION)" ./scripts/build-release-dmg.sh
+
+release: dmg ## Publish a GitHub release from a local notarized build (set VERSION=vX.Y.Z and AEROMUX_NOTARY_PROFILE)
+	cd "$(DIST_DIR)" && shasum -a 256 "$(APP_NAME)-$(VERSION).dmg" > "$(APP_NAME)-$(VERSION).dmg.sha256"
+	gh release create "$(VERSION)" \
+		"$(DIST_DIR)/$(APP_NAME)-$(VERSION).dmg" \
+		"$(DIST_DIR)/$(APP_NAME)-$(VERSION).dmg.sha256" \
+		--generate-notes --title "$(VERSION)"
 
 install: app ## Install the built app bundle into /Applications
 	rm -rf "$(APP_INSTALL_PATH)"
@@ -40,6 +63,5 @@ open-dist-app: app ## Open the locally built app bundle from dist/
 open-installed-app: ## Open the installed app from /Applications
 	open "$(APP_INSTALL_PATH)"
 
-clean: ## Remove SwiftPM and packaging build artifacts
-	swift package clean
-	rm -rf "$(DIST_DIR)"
+clean: ## Remove build, packaging, and generated-project artifacts
+	rm -rf "$(DERIVED_DATA)" "$(DIST_DIR)" build "$(PROJECT)" Packaging/AeroMux-Info.generated.plist

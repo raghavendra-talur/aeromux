@@ -5,7 +5,7 @@ on:
   pull_request:
 
 jobs:
-  swift-build:
+  xcode-build-test:
     runs-on: macos-15
 
     steps:
@@ -23,5 +23,14 @@ jobs:
           xcodebuild -version
           swift --version
 
-      - name: Build
-        run: swift build
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build and test (Debug, ad hoc signed)
+        run: |
+          xcodebuild -project AeroMux.xcodeproj -scheme AeroMux \
+            -configuration Debug -derivedDataPath DerivedData \
+            build test
