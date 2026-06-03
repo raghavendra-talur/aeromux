@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 struct SidebarRootView: View {
@@ -32,11 +33,26 @@ struct SidebarRootView: View {
         }
     }
 
+    // The user-facing computer name, equivalent to `scutil --get ComputerName`.
+    private var computerName: String? {
+        Host.current().localizedName
+    }
+
     private var header: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("AeroMux")
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
-                .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                Text("AeroMux")
+                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+
+                if let computerName {
+                    Text("•")
+                    Text(computerName)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+            }
+            .font(.system(size: 10, weight: .medium, design: .rounded))
+            .foregroundStyle(.secondary)
 
             HStack(spacing: 6) {
                 Text("\(stateStore.state.visibleWorkspaceCount) task\(stateStore.state.visibleWorkspaceCount == 1 ? "" : "s")")
