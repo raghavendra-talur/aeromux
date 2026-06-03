@@ -16,6 +16,7 @@ This is an early release MVP. It now ships as a GitHub Releases DMG and can stil
 - Lets you change the sidebar width from the menu bar
 - Lets you enable compact mode from the menu bar
 - Lets you enable launch at login from the menu bar
+- Lets you set a global keyboard shortcut to show or hide the sidebar from any app
 - Polls AeroSpace every second by default
 - Supports a localhost refresh hook for lower-latency updates
 - Detects whether your AeroSpace left gap is large enough to avoid overlap
@@ -35,7 +36,7 @@ Before you try it, the current behavior is worth stating clearly:
 - The clean layout depends on an AeroSpace `outer.left` gap reservation
 - If the gap is missing or too small, AeroMux falls back to a floating overlay
 - There is no Preferences window yet
-- Release DMGs are currently ad hoc signed but not notarized
+- There is no default keyboard shortcut; you set your own from the menu bar
 
 ## Requirements
 
@@ -61,7 +62,7 @@ If `which aerospace` prints nothing, AeroMux will fail to talk to AeroSpace.
 
 The preferred install path is the latest DMG from [GitHub Releases](https://github.com/raghavendra-talur/aeromux/releases).
 
-Current release builds are ad hoc signed but not notarized, so macOS may warn on first launch. If that happens, open the app with Finder's `Open` flow and confirm the warning once.
+Release builds are Developer ID-signed and notarized by Apple, so Gatekeeper accepts them without a warning. Open the DMG and drag `AeroMux.app` into `Applications`.
 
 ### Run Directly From Source
 
@@ -96,6 +97,18 @@ You can stop it with:
 ```bash
 pkill AeroMux
 ```
+
+## Keyboard Shortcut
+
+AeroMux can show or hide the sidebar with a global keyboard shortcut that works from any app.
+
+There is no default shortcut, so you set your own:
+
+1. Click the AeroMux menu bar icon.
+2. Choose **Keyboard Shortcuts…**.
+3. In the **AeroMux Shortcuts** window, click the recorder next to **Toggle Sidebar** and press the combination you want (for example `⌃⌘A`).
+
+Once set, that combination toggles the sidebar from anywhere. The current shortcut is also shown next to **Show Sidebar** / **Hide Sidebar** in the menu bar, and that menu item toggles the sidebar too. To change or remove it, reopen the same window and record a new combination or clear the existing one.
 
 ## Recommended AeroSpace Configuration
 
@@ -270,7 +283,6 @@ Check the basics first:
 - Main monitor only
 - Left sidebar only
 - No Preferences window yet
-- Release builds are not notarized yet
 - No published compatibility matrix yet for Intel Macs or multiple AeroSpace versions
 
 ## Verified On This Machine
