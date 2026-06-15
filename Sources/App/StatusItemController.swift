@@ -13,6 +13,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     private let menu = NSMenu()
     private let toggleSidebarItem = NSMenuItem()
     private let sidebarWidthItem = NSMenuItem()
+    private let windowTransparencyItem = NSMenuItem()
     private let windowModeItem = NSMenuItem()
     private let standardWindowModeItem = NSMenuItem()
     private let floatingWindowModeItem = NSMenuItem()
@@ -65,6 +66,9 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         sidebarWidthItem.target = self
         sidebarWidthItem.action = #selector(editSidebarWidth)
 
+        windowTransparencyItem.target = self
+        windowTransparencyItem.action = #selector(editWindowTransparency)
+
         windowModeItem.title = "Window Mode"
         let windowModeMenu = NSMenu()
 
@@ -109,6 +113,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.items = [
             toggleSidebarItem,
             sidebarWidthItem,
+            windowTransparencyItem,
             windowModeItem,
             reorderWorkspacesItem,
             compactModeItem,
@@ -129,6 +134,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             toggleSidebarItem.title = baseTitle
         }
         sidebarWidthItem.title = "Sidebar Width: \(Int(settings.sidebarWidth)) px"
+        windowTransparencyItem.title = "Window Transparency: \(Int(settings.windowTransparency))%"
         windowModeItem.title = "Window Mode: \(settings.windowMode.menuTitle)"
         standardWindowModeItem.state = settings.windowMode == .standard ? .on : .off
         floatingWindowModeItem.state = settings.windowMode == .floating ? .on : .off
@@ -210,6 +216,13 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         }
     }
 
+    @objc
+    private func editWindowTransparency() {
+        DispatchQueue.main.async { [weak self] in
+            self?.presentWindowTransparencyEditor()
+        }
+    }
+
     private func presentSidebarWidthEditor() {
         NSApp.activate(ignoringOtherApps: true)
 
@@ -251,6 +264,44 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         applySidebarWidthChange(CGFloat(width))
     }
 
+    private func presentWindowTransparencyEditor() {
+        NSApp.activate(ignoringOtherApps: true)
+
+        let alert = NSAlert()
+        let minTransparency = Int(SettingsStore.windowTransparencyRange.lowerBound)
+        let maxTransparency = Int(SettingsStore.windowTransparencyRange.upperBound)
+        alert.messageText = "Window Transparency"
+        alert.informativeText = "Enter a whole-number transparency percentage from \(minTransparency) to \(maxTransparency). The window background fades, while text stays fully opaque."
+
+        let inputField = NSTextField(string: "\(Int(settings.windowTransparency))")
+        inputField.frame = NSRect(x: 0, y: 0, width: 220, height: 24)
+        alert.accessoryView = inputField
+        alert.addButton(withTitle: "Save")
+        alert.addButton(withTitle: "Cancel")
+        alert.window.initialFirstResponder = inputField
+        alert.window.level = .modalPanel
+        alert.window.center()
+
+        guard alert.runModal() == .alertFirstButtonReturn else {
+            return
+        }
+
+        let rawValue = inputField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let transparency = Double(rawValue) else {
+            presentInvalidWindowTransparencyAlert()
+            return
+        }
+
+        let minValue = SettingsStore.windowTransparencyRange.lowerBound
+        let maxValue = SettingsStore.windowTransparencyRange.upperBound
+        guard transparency.rounded() == transparency, transparency >= minValue, transparency <= maxValue else {
+            presentInvalidWindowTransparencyAlert()
+            return
+        }
+
+        applyWindowTransparencyChange(transparency)
+    }
+
     private func presentInvalidSidebarWidthAlert() {
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert()
@@ -258,6 +309,17 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         let maxWidth = Int(SettingsStore.sidebarWidthRange.upperBound)
         alert.messageText = "Invalid Sidebar Width"
         alert.informativeText = "Enter a whole number between \(minWidth) and \(maxWidth) pixels."
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
+    private func presentInvalidWindowTransparencyAlert() {
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        let minTransparency = Int(SettingsStore.windowTransparencyRange.lowerBound)
+        let maxTransparency = Int(SettingsStore.windowTransparencyRange.upperBound)
+        alert.messageText = "Invalid Window Transparency"
+        alert.informativeText = "Enter a whole number between \(minTransparency) and \(maxTransparency) percent."
         alert.addButton(withTitle: "OK")
         alert.runModal()
     }
@@ -284,6 +346,12 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         settings.setSidebarWidth(width)
         windowController.showWindow()
         refreshCoordinator.requestRefresh(reason: .manual)
+        updateMenuState()
+    }
+
+    private func applyWindowTransparencyChange(_ transparency: Double) {
+        settings.setWindowTransparency(transparency)
+        windowController.showWindow()
         updateMenuState()
     }
 

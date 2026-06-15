@@ -13,8 +13,11 @@ final class SettingsStoreTests: XCTestCase {
         )
 
         XCTAssertEqual(store.windowMode, .standard)
+        XCTAssertEqual(store.windowTransparency, 0)
+        XCTAssertEqual(store.windowBackgroundOpacity, 1)
 
         store.windowMode = .floating
+        store.windowTransparency = 42
         store.persist()
 
         let reloaded = SettingsStore(
@@ -23,9 +26,12 @@ final class SettingsStoreTests: XCTestCase {
             logger: AppLogger()
         )
         XCTAssertEqual(reloaded.windowMode, .floating)
+        XCTAssertEqual(reloaded.windowTransparency, 42)
+        XCTAssertEqual(reloaded.windowBackgroundOpacity, 0.58, accuracy: 0.001)
 
         let payload = try fixture.settingsPayload()
         XCTAssertEqual(payload["windowMode"] as? String, "floating")
+        XCTAssertEqual((payload["windowTransparency"] as? NSNumber)?.doubleValue, 42)
     }
 
     func test_unknownWindowModeFallsBackToStandard() throws {
@@ -45,6 +51,34 @@ final class SettingsStoreTests: XCTestCase {
         )
 
         XCTAssertEqual(store.windowMode, .standard)
+    }
+
+    func test_windowTransparency_isClampedAndPersists() throws {
+        let fixture = try SettingsFixture()
+        try fixture.writeSettingsPayload([
+            "compactMode": false,
+            "launchAtLogin": false,
+            "pinActiveWorkspaceFirst": false,
+            "sidebarWidth": 260,
+            "windowMode": "standard",
+            "windowTransparency": 90,
+        ])
+
+        let store = SettingsStore(
+            defaults: fixture.defaults,
+            fileManager: fixture.fileManager,
+            logger: AppLogger()
+        )
+
+        XCTAssertEqual(store.windowTransparency, 65)
+        XCTAssertEqual(store.windowBackgroundOpacity, 0.35, accuracy: 0.001)
+
+        store.setWindowTransparency(-10)
+        XCTAssertEqual(store.windowTransparency, 0)
+        XCTAssertEqual(store.windowBackgroundOpacity, 1)
+
+        let payload = try fixture.settingsPayload()
+        XCTAssertEqual((payload["windowTransparency"] as? NSNumber)?.doubleValue, 0)
     }
 }
 

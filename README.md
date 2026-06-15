@@ -11,7 +11,7 @@ AeroMux is a macOS menu bar companion for [AeroSpace](https://github.com/nikitab
 - Lists windows by app name and title
 - Lets you click a window row to focus it through the AeroSpace CLI
 - Supports standard and floating window modes
-- Lets you change sidebar width, compact mode, workspace ordering, launch-at-login, and keyboard shortcuts from the menu bar
+- Lets you change sidebar width, window transparency, compact mode, workspace ordering, launch-at-login, and keyboard shortcuts from the menu bar
 - Supports local workspace titles and descriptions
 - Polls AeroSpace every second by default, with an optional localhost refresh hook for lower-latency updates
 
@@ -22,6 +22,8 @@ AeroMux starts in **standard** window mode.
 Standard mode is the integrated layout. AeroMux expects AeroSpace to reserve a left gap at least as wide as the sidebar. When the gap is configured correctly, the sidebar uses a normal window level and tiled windows stay out of its way.
 
 Floating mode is the zero-config layout. AeroMux keeps the sidebar floating above normal windows, AeroSpace leaves it alone instead of tiling it, and sidebar width no longer depends on `outer.left`. This is simpler to try, but it can cover tiled windows.
+
+Window transparency is independent of window mode. It fades the sidebar background while keeping labels and window text fully opaque.
 
 You can switch modes from the menu bar:
 
@@ -107,6 +109,7 @@ The AeroMux menu bar item is the main control surface:
 
 - **Show Sidebar** / **Hide Sidebar** toggles the sidebar window
 - **Sidebar Width** sets a whole-number width from `100` to `600` pixels
+- **Window Transparency** fades the sidebar background from `0` to `65` percent while keeping text fully opaque
 - **Window Mode** switches between standard and floating behavior
 - **Pin Active Workspace First** moves the focused workspace to the top
 - **Compact Mode** uses a denser sidebar layout
@@ -155,7 +158,8 @@ Created automatically on first launch:
   "launchAtLogin": false,
   "pinActiveWorkspaceFirst": false,
   "sidebarWidth": 260,
-  "windowMode": "standard"
+  "windowMode": "standard",
+  "windowTransparency": 0
 }
 ```
 
@@ -163,6 +167,7 @@ Keys:
 
 - `sidebarWidth`: sidebar width in pixels, clamped to whole numbers from `100` to `600`
 - `windowMode`: `standard` or `floating`
+- `windowTransparency`: background transparency percentage from `0` to `65`
 - `compactMode`: denser sidebar text and spacing
 - `pinActiveWorkspaceFirst`: move the focused workspace to the top
 - `launchAtLogin`: register or unregister AeroMux with macOS login items

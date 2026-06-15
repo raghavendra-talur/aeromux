@@ -12,6 +12,7 @@ struct SidebarRootView: View {
         ZStack {
             VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
                 .ignoresSafeArea()
+                .opacity(settings.windowBackgroundOpacity)
 
             VStack(alignment: .leading, spacing: 12) {
                 header

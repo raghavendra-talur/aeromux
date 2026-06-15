@@ -23,6 +23,8 @@ final class SettingsStore: ObservableObject {
 
     static let defaultSidebarWidth: CGFloat = 260
     static let sidebarWidthRange: ClosedRange<CGFloat> = 100 ... 600
+    static let defaultWindowTransparency: Double = 0
+    static let windowTransparencyRange: ClosedRange<Double> = 0 ... 65
 
     @Published var sidebarWidth: CGFloat
     @Published var monitorMode: MonitorMode
@@ -33,6 +35,7 @@ final class SettingsStore: ObservableObject {
     @Published var launchesAtLogin: Bool
     @Published var compactMode: Bool
     @Published var windowMode: WindowMode
+    @Published var windowTransparency: Double
 
     private let defaults: UserDefaults
     private let fileManager: FileManager
@@ -81,6 +84,9 @@ final class SettingsStore: ObservableObject {
         launchesAtLogin = persistedConfig?.launchAtLogin ?? false
         compactMode = persistedConfig?.compactMode ?? false
         windowMode = persistedConfig?.resolvedWindowMode ?? .standard
+        windowTransparency = Self.normalizedWindowTransparency(
+            persistedConfig?.windowTransparency ?? Self.defaultWindowTransparency
+        )
 
         if shouldBootstrapConfig {
             persistConfig()
@@ -90,6 +96,7 @@ final class SettingsStore: ObservableObject {
 
     func persist() {
         sidebarWidth = Self.normalizedSidebarWidth(sidebarWidth)
+        windowTransparency = Self.normalizedWindowTransparency(windowTransparency)
         persistConfig()
         removeLegacyConfigDefaults()
         defaults.set(monitorMode.rawValue, forKey: Keys.monitorMode)
@@ -104,6 +111,15 @@ final class SettingsStore: ObservableObject {
         persist()
     }
 
+    func setWindowTransparency(_ transparency: Double) {
+        windowTransparency = Self.normalizedWindowTransparency(transparency)
+        persist()
+    }
+
+    var windowBackgroundOpacity: Double {
+        1 - (Self.normalizedWindowTransparency(windowTransparency) / 100)
+    }
+
     private func persistConfig() {
         guard let configFileURL else { return }
 
@@ -115,7 +131,8 @@ final class SettingsStore: ObservableObject {
                 pinActiveWorkspaceFirst: reordersFocusedWorkspaceToTop,
                 launchAtLogin: launchesAtLogin,
                 compactMode: compactMode,
-                windowMode: windowMode.rawValue
+                windowMode: windowMode.rawValue,
+                windowTransparency: windowTransparency
             )
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -133,6 +150,10 @@ final class SettingsStore: ObservableObject {
 
     private static func normalizedSidebarWidth(_ width: CGFloat) -> CGFloat {
         min(max(width.rounded(), sidebarWidthRange.lowerBound), sidebarWidthRange.upperBound)
+    }
+
+    private static func normalizedWindowTransparency(_ transparency: Double) -> Double {
+        min(max(transparency.rounded(), windowTransparencyRange.lowerBound), windowTransparencyRange.upperBound)
     }
 
     private static func legacySidebarWidth(from defaults: UserDefaults) -> CGFloat? {
@@ -158,6 +179,7 @@ final class SettingsStore: ObservableObject {
         var launchAtLogin: Bool?
         var compactMode: Bool?
         var windowMode: String?
+        var windowTransparency: Double?
 
         var resolvedWindowMode: WindowMode? {
             windowMode.flatMap(WindowMode.init(rawValue:))
