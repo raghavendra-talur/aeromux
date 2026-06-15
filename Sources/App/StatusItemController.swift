@@ -14,6 +14,9 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     private let toggleSidebarItem = NSMenuItem()
     private let sidebarWidthItem = NSMenuItem()
     private let windowTransparencyItem = NSMenuItem()
+    private let windowTransparencyControl = WindowTransparencyMenuItemView(
+        range: SettingsStore.windowTransparencyRange
+    )
     private let windowModeItem = NSMenuItem()
     private let standardWindowModeItem = NSMenuItem()
     private let floatingWindowModeItem = NSMenuItem()
@@ -66,8 +69,11 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         sidebarWidthItem.target = self
         sidebarWidthItem.action = #selector(editSidebarWidth)
 
-        windowTransparencyItem.target = self
-        windowTransparencyItem.action = #selector(editWindowTransparency)
+        windowTransparencyItem.title = "Window Transparency"
+        windowTransparencyItem.view = windowTransparencyControl
+        windowTransparencyControl.onValueChange = { [weak self] transparency in
+            self?.applyWindowTransparencyChange(transparency)
+        }
 
         windowModeItem.title = "Window Mode"
         let windowModeMenu = NSMenu()
@@ -134,7 +140,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             toggleSidebarItem.title = baseTitle
         }
         sidebarWidthItem.title = "Sidebar Width: \(Int(settings.sidebarWidth)) px"
-        windowTransparencyItem.title = "Window Transparency: \(Int(settings.windowTransparency))%"
+        windowTransparencyControl.setValue(settings.windowTransparency)
         windowModeItem.title = "Window Mode: \(settings.windowMode.menuTitle)"
         standardWindowModeItem.state = settings.windowMode == .standard ? .on : .off
         floatingWindowModeItem.state = settings.windowMode == .floating ? .on : .off
@@ -216,13 +222,6 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         }
     }
 
-    @objc
-    private func editWindowTransparency() {
-        DispatchQueue.main.async { [weak self] in
-            self?.presentWindowTransparencyEditor()
-        }
-    }
-
     private func presentSidebarWidthEditor() {
         NSApp.activate(ignoringOtherApps: true)
 
@@ -264,44 +263,6 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         applySidebarWidthChange(CGFloat(width))
     }
 
-    private func presentWindowTransparencyEditor() {
-        NSApp.activate(ignoringOtherApps: true)
-
-        let alert = NSAlert()
-        let minTransparency = Int(SettingsStore.windowTransparencyRange.lowerBound)
-        let maxTransparency = Int(SettingsStore.windowTransparencyRange.upperBound)
-        alert.messageText = "Window Transparency"
-        alert.informativeText = "Enter a whole-number transparency percentage from \(minTransparency) to \(maxTransparency). The window background fades, while text stays fully opaque."
-
-        let inputField = NSTextField(string: "\(Int(settings.windowTransparency))")
-        inputField.frame = NSRect(x: 0, y: 0, width: 220, height: 24)
-        alert.accessoryView = inputField
-        alert.addButton(withTitle: "Save")
-        alert.addButton(withTitle: "Cancel")
-        alert.window.initialFirstResponder = inputField
-        alert.window.level = .modalPanel
-        alert.window.center()
-
-        guard alert.runModal() == .alertFirstButtonReturn else {
-            return
-        }
-
-        let rawValue = inputField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let transparency = Double(rawValue) else {
-            presentInvalidWindowTransparencyAlert()
-            return
-        }
-
-        let minValue = SettingsStore.windowTransparencyRange.lowerBound
-        let maxValue = SettingsStore.windowTransparencyRange.upperBound
-        guard transparency.rounded() == transparency, transparency >= minValue, transparency <= maxValue else {
-            presentInvalidWindowTransparencyAlert()
-            return
-        }
-
-        applyWindowTransparencyChange(transparency)
-    }
-
     private func presentInvalidSidebarWidthAlert() {
         NSApp.activate(ignoringOtherApps: true)
         let alert = NSAlert()
@@ -309,17 +270,6 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         let maxWidth = Int(SettingsStore.sidebarWidthRange.upperBound)
         alert.messageText = "Invalid Sidebar Width"
         alert.informativeText = "Enter a whole number between \(minWidth) and \(maxWidth) pixels."
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
-    }
-
-    private func presentInvalidWindowTransparencyAlert() {
-        NSApp.activate(ignoringOtherApps: true)
-        let alert = NSAlert()
-        let minTransparency = Int(SettingsStore.windowTransparencyRange.lowerBound)
-        let maxTransparency = Int(SettingsStore.windowTransparencyRange.upperBound)
-        alert.messageText = "Invalid Window Transparency"
-        alert.informativeText = "Enter a whole number between \(minTransparency) and \(maxTransparency) percent."
         alert.addButton(withTitle: "OK")
         alert.runModal()
     }
@@ -363,5 +313,114 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     @objc
     private func quitApp() {
         NSApp.terminate(nil)
+    }
+}
+
+@MainActor
+private final class WindowTransparencyMenuItemView: NSView {
+    var onValueChange: ((Double) -> Void)?
+
+    private let slider = NSSlider()
+    private let titleLabel = NSTextField(labelWithString: "Window Transparency")
+    private let valueLabel = NSTextField(labelWithString: "")
+    private let range: ClosedRange<Double>
+    private var lastSentValue: Double?
+
+    override var intrinsicContentSize: NSSize {
+        NSSize(width: Layout.width, height: Layout.height)
+    }
+
+    init(range: ClosedRange<Double>) {
+        self.range = range
+        super.init(
+            frame: NSRect(origin: .zero, size: NSSize(width: Layout.width, height: Layout.height))
+        )
+        configureLabels()
+        configureSlider()
+        setValue(range.lowerBound)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func setValue(_ value: Double) {
+        let normalizedValue = normalized(value)
+        slider.doubleValue = normalizedValue
+        lastSentValue = normalizedValue
+        updateValueLabel()
+    }
+
+    private func configureLabels() {
+        titleLabel.frame = NSRect(
+            x: Layout.horizontalPadding,
+            y: Layout.titleY,
+            width: Layout.titleWidth,
+            height: Layout.labelHeight
+        )
+        titleLabel.font = .menuFont(ofSize: 0)
+        addSubview(titleLabel)
+
+        valueLabel.frame = NSRect(
+            x: Layout.valueX,
+            y: Layout.titleY,
+            width: Layout.valueWidth,
+            height: Layout.labelHeight
+        )
+        valueLabel.alignment = .right
+        valueLabel.font = .monospacedDigitSystemFont(ofSize: NSFont.smallSystemFontSize, weight: .regular)
+        addSubview(valueLabel)
+    }
+
+    private func configureSlider() {
+        slider.frame = NSRect(
+            x: Layout.horizontalPadding,
+            y: Layout.sliderY,
+            width: Layout.sliderWidth,
+            height: Layout.sliderHeight
+        )
+        slider.minValue = range.lowerBound
+        slider.maxValue = range.upperBound
+        slider.isContinuous = true
+        slider.target = self
+        slider.action = #selector(sliderChanged)
+        addSubview(slider)
+    }
+
+    @objc
+    private func sliderChanged() {
+        let value = normalized(slider.doubleValue)
+        slider.doubleValue = value
+        updateValueLabel()
+
+        guard value != lastSentValue else {
+            return
+        }
+
+        lastSentValue = value
+        onValueChange?(value)
+    }
+
+    private func updateValueLabel() {
+        valueLabel.stringValue = "\(Int(slider.doubleValue.rounded()))%"
+    }
+
+    private func normalized(_ value: Double) -> Double {
+        min(max(value.rounded(), range.lowerBound), range.upperBound)
+    }
+
+    private enum Layout {
+        static let width: CGFloat = 280
+        static let height: CGFloat = 58
+        static let horizontalPadding: CGFloat = 16
+        static let labelHeight: CGFloat = 18
+        static let titleY: CGFloat = 34
+        static let sliderY: CGFloat = 8
+        static let sliderHeight: CGFloat = 22
+        static let valueWidth: CGFloat = 48
+        static let titleWidth = width - (horizontalPadding * 2) - valueWidth - 8
+        static let valueX = width - horizontalPadding - valueWidth
+        static let sliderWidth = width - (horizontalPadding * 2)
     }
 }
