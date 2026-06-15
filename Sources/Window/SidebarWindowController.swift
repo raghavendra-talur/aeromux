@@ -11,6 +11,7 @@ final class SidebarWindowController: NSWindowController, NSWindowDelegate {
     private let refreshCoordinator: RefreshCoordinator
     private var stateObserver: AnyCancellable?
     private var settingsObserver: AnyCancellable?
+    private var windowModeObserver: AnyCancellable?
 
     init(
         settings: SettingsStore,
@@ -56,13 +57,18 @@ final class SidebarWindowController: NSWindowController, NSWindowDelegate {
 
         super.init(window: panel)
         panel.delegate = self
-        stateObserver = stateStore.$state.sink { [weak self] state in
-            self?.applyPresentation(state.integrationStatus.presentation)
+        stateObserver = stateStore.$state.sink { [weak self] _ in
+            self?.applyCurrentPresentation()
         }
         settingsObserver = settings.$sidebarWidth
             .removeDuplicates()
             .sink { [weak self] _ in
                 self?.updateFrame()
+            }
+        windowModeObserver = settings.$windowMode
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.applyCurrentPresentation()
             }
         NotificationCenter.default.addObserver(
             self,
@@ -79,7 +85,7 @@ final class SidebarWindowController: NSWindowController, NSWindowDelegate {
 
     func showWindow() {
         guard let window else { return }
-        applyPresentation(stateStore.state.integrationStatus.presentation)
+        applyCurrentPresentation()
         updateFrame()
         window.orderFrontRegardless()
     }
@@ -122,6 +128,15 @@ final class SidebarWindowController: NSWindowController, NSWindowDelegate {
 
     private func targetScreen() -> NSScreen? {
         NSScreen.main ?? NSScreen.screens.first
+    }
+
+    private func applyCurrentPresentation() {
+        switch settings.windowMode {
+        case .standard:
+            applyPresentation(stateStore.state.integrationStatus.presentation)
+        case .floating:
+            applyPresentation(.floatingOverlay)
+        }
     }
 
     private func applyPresentation(_ presentation: AeroSpaceIntegrationStatus.WindowPresentation) {

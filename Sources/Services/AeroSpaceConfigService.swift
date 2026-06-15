@@ -67,6 +67,8 @@ actor AeroSpaceConfigService {
     }
 
     static func parseReservedLeftGap(from configText: String) -> CGFloat? {
+        let configText = stripComments(from: configText)
+
         if let mainGap = firstNumber(
             in: configText,
             pattern: #"outer\.left\s*=\s*\[\s*\{\s*monitor\.main\s*=\s*([0-9]+(?:\.[0-9]+)?)"#
@@ -89,6 +91,46 @@ actor AeroSpaceConfigService {
         }
 
         return nil
+    }
+
+    private static func stripComments(from input: String) -> String {
+        input
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map(stripComment)
+            .joined(separator: "\n")
+    }
+
+    private static func stripComment(from line: Substring) -> String {
+        var output = ""
+        var isInSingleQuotedString = false
+        var isInDoubleQuotedString = false
+        var isEscaped = false
+
+        for character in line {
+            if character == "#" && !isInSingleQuotedString && !isInDoubleQuotedString {
+                break
+            }
+
+            output.append(character)
+
+            if isEscaped {
+                isEscaped = false
+                continue
+            }
+
+            if character == "\\" && isInDoubleQuotedString {
+                isEscaped = true
+                continue
+            }
+
+            if character == "'" && !isInDoubleQuotedString {
+                isInSingleQuotedString.toggle()
+            } else if character == "\"" && !isInSingleQuotedString {
+                isInDoubleQuotedString.toggle()
+            }
+        }
+
+        return output
     }
 
     private static func firstNumber(in input: String, pattern: String) -> CGFloat? {

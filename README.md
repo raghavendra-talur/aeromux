@@ -1,70 +1,75 @@
 # AeroMux
 
-AeroMux gives [AeroSpace](https://github.com/nikitabobko/AeroSpace) a persistent macOS sidebar. It keeps your non-empty workspaces visible, highlights the active workspace and window, and lets you click a listed window to focus it.
-
-This is an early release MVP. It now ships as a GitHub Releases DMG and can still be built locally with Swift Package Manager.
+AeroMux is a macOS menu bar companion for [AeroSpace](https://github.com/nikitabobko/AeroSpace). It adds a persistent left sidebar so you can see your non-empty workspaces, spot the focused window, and jump directly to a window without leaving your tiling workflow.
 
 ![AeroMux screenshot](docs/assets/aeromux-screenshot.png)
 
-## What It Does
+## Highlights
 
-- Shows non-empty AeroSpace workspaces in a persistent left sidebar
+- Shows non-empty AeroSpace workspaces in a persistent sidebar
 - Highlights the focused workspace and focused window
-- Lists windows inside each workspace by app name
-- Lets you click a row to focus that window through the AeroSpace CLI
-- Adds a menu bar item for show/hide, refresh, and quit
-- Lets you change the sidebar width from the menu bar
-- Lets you enable compact mode from the menu bar
-- Lets you enable launch at login from the menu bar
-- Lets you set a global keyboard shortcut to show or hide the sidebar from any app
-- Polls AeroSpace every second by default
-- Supports a localhost refresh hook for lower-latency updates
-- Detects whether your AeroSpace left gap is large enough to avoid overlap
-- Lets you keep workspace positions stable instead of moving the active one to the top
-- Stores sidebar settings in `~/.config/aeromux/settings.json`
-- Supports local workspace titles/descriptions from `~/.config/aeromux/workspaces.json`
+- Lists windows by app name and title
+- Lets you click a window row to focus it through the AeroSpace CLI
+- Supports standard and floating window modes
+- Lets you change sidebar width, compact mode, workspace ordering, launch-at-login, and keyboard shortcuts from the menu bar
+- Supports local workspace titles and descriptions
+- Polls AeroSpace every second by default, with an optional localhost refresh hook for lower-latency updates
 
-## Why It Exists
+## Window Modes
 
-AeroSpace gives you fast keyboard-driven workspace management. AeroMux adds a constant visual rail so you can see what is open and jump to a specific window without losing the tiling workflow.
+AeroMux starts in **standard** window mode.
 
-## Current Scope
+Standard mode is the integrated layout. AeroMux expects AeroSpace to reserve a left gap at least as wide as the sidebar. When the gap is configured correctly, the sidebar uses a normal window level and tiled windows stay out of its way.
 
-Before you try it, the current behavior is worth stating clearly:
+Floating mode is the zero-config layout. AeroMux keeps the sidebar floating above normal windows, AeroSpace leaves it alone instead of tiling it, and sidebar width no longer depends on `outer.left`. This is simpler to try, but it can cover tiled windows.
 
-- The sidebar is anchored to the left edge of the main monitor
-- The clean layout depends on an AeroSpace `outer.left` gap reservation
-- If the gap is missing or too small, AeroMux falls back to a floating overlay
-- There is no Preferences window yet
-- There is no default keyboard shortcut; you set your own from the menu bar
+You can switch modes from the menu bar:
+
+```text
+AeroMux menu bar icon -> Window Mode -> Standard
+AeroMux menu bar icon -> Window Mode -> Floating
+```
+
+## Recommended AeroSpace Setup
+
+For the best standard-mode experience, reserve a left gap on your main monitor:
+
+```toml
+[gaps]
+    outer.left = [{ monitor.main = 260 }, 0]
+```
+
+`260` is AeroMux's default sidebar width. If you change the sidebar width from the menu bar or in `settings.json`, keep the standard-mode `outer.left` value at least that large.
+
+If AeroMux cannot confirm a large enough gap in standard mode, it falls back to a floating overlay and shows an integration warning in the sidebar.
 
 ## Requirements
 
 - macOS 13 or newer
-- AeroSpace installed and already working on your machine
-- `aerospace` available on `PATH` in the same environment used to launch AeroMux
-- A Swift 6 toolchain that can build macOS apps with Swift Package Manager
+- AeroSpace installed and already working
+- `aerospace` available on `PATH` in the environment that launches AeroMux
+- A Swift 6 toolchain if you build from source
 
-Quick sanity checks:
+Quick checks:
 
 ```bash
 sw_vers -productVersion
 aerospace --version
-swift --version
 which aerospace
+swift --version
 ```
 
-If `which aerospace` prints nothing, AeroMux will fail to talk to AeroSpace.
+If `which aerospace` prints nothing, AeroMux will not be able to read or focus AeroSpace windows from that launch environment.
 
-## Install And Run
+## Install
 
 ### Download The DMG
 
 The preferred install path is the latest DMG from [GitHub Releases](https://github.com/raghavendra-talur/aeromux/releases).
 
-Release builds are Developer ID-signed and notarized by Apple, so Gatekeeper accepts them without a warning. Open the DMG and drag `AeroMux.app` into `Applications`.
+Release builds are Developer ID-signed and notarized by Apple. Open the DMG, drag `AeroMux.app` into `Applications`, and launch it.
 
-### Run Directly From Source
+### Build From Source
 
 ```bash
 git clone https://github.com/raghavendra-talur/aeromux.git
@@ -73,119 +78,100 @@ swift build
 swift run
 ```
 
-That launches AeroMux as a background-style accessory app and opens the sidebar window.
+AeroMux launches as a background-style accessory app and opens the sidebar window.
 
-### Run The Built Binary
-
-If you prefer to build once and launch the executable yourself:
+To build and run the executable yourself:
 
 ```bash
 swift build
 ./.build/debug/AeroMux
 ```
 
-If you launch it in the foreground, stop it with `Ctrl-C`.
+Stop a foreground run with `Ctrl-C`.
 
-If you launch it in the background:
+To launch in the background:
 
 ```bash
 ./.build/debug/AeroMux &
 ```
 
-You can stop it with:
+Stop a background run with:
 
 ```bash
 pkill AeroMux
 ```
 
+## Menu Bar Controls
+
+The AeroMux menu bar item is the main control surface:
+
+- **Show Sidebar** / **Hide Sidebar** toggles the sidebar window
+- **Sidebar Width** sets a whole-number width from `100` to `600` pixels
+- **Window Mode** switches between standard and floating behavior
+- **Pin Active Workspace First** moves the focused workspace to the top
+- **Compact Mode** uses a denser sidebar layout
+- **Launch at Login** asks macOS to start AeroMux automatically
+- **Keyboard Shortcuts...** opens the shortcut recorder
+- **Refresh Now** asks AeroMux to reread AeroSpace state immediately
+- **Quit AeroMux** exits the app
+
 ## Keyboard Shortcut
 
-AeroMux can show or hide the sidebar with a global keyboard shortcut that works from any app.
-
-There is no default shortcut, so you set your own:
+There is no default global shortcut. To set one:
 
 1. Click the AeroMux menu bar icon.
-2. Choose **Keyboard Shortcuts…**.
-3. In the **AeroMux Shortcuts** window, click the recorder next to **Toggle Sidebar** and press the combination you want (for example `⌃⌘A`).
+2. Choose **Keyboard Shortcuts...**.
+3. In the **AeroMux Shortcuts** window, record a shortcut for **Toggle Sidebar**.
 
-Once set, that combination toggles the sidebar from anywhere. The current shortcut is also shown next to **Show Sidebar** / **Hide Sidebar** in the menu bar, and that menu item toggles the sidebar too. To change or remove it, reopen the same window and record a new combination or clear the existing one.
+Once set, the shortcut toggles the sidebar from any app. The current shortcut also appears next to **Show Sidebar** or **Hide Sidebar** in the menu bar.
 
-## Recommended AeroSpace Configuration
+## Workspace Names
 
-To avoid the sidebar covering tiled windows, reserve space on the left side of your main monitor:
+Each workspace card has an edit button. Use it to set a local title and optional description for that AeroSpace workspace.
 
-```toml
-[gaps]
-    outer.left = [{ monitor.main = 260 }, 0]
-```
+Custom titles and descriptions are stored in `workspaces.json`. AeroMux still keeps the original AeroSpace workspace name, and shows it as `Workspace <name>` when a custom title is present.
 
-`260` matches the current default sidebar width. If you use a different width in code later, keep the two values aligned.
+## Configuration Files
 
-You can change the width from the AeroMux menu bar item or by editing `settings.json` directly. If you increase the width, make sure `outer.left` is at least that large.
-
-When AeroMux can confirm that the reserved left gap is wide enough, it drops to a normal window level. If it cannot confirm that reservation, or the gap is too small, it stays floating and shows a warning in the UI.
-
-## Optional Refresh Hook
-
-Polling mode works without any extra setup. If you want faster updates after AeroSpace events, add a hook that hits AeroMux's local refresh endpoint:
+AeroMux stores user-editable files under:
 
 ```bash
-curl -fsS -X POST http://127.0.0.1:39173/refresh >/dev/null 2>&1 || true
-```
-
-A helper script is included at `scripts/aerospace-refresh-hook.sh`.
-
-The refresh listener binds only to `127.0.0.1:39173`.
-
-## Settings File
-
-AeroMux stores sidebar-specific settings in:
-
-```bash
-~/.config/aeromux/settings.json
+~/.config/aeromux
 ```
 
 If `XDG_CONFIG_HOME` is set, AeroMux uses:
 
 ```bash
-$XDG_CONFIG_HOME/aeromux/settings.json
+$XDG_CONFIG_HOME/aeromux
 ```
 
-The file is created automatically on first run. Current keys:
+### `settings.json`
+
+Created automatically on first launch:
 
 ```json
 {
   "compactMode": false,
   "launchAtLogin": false,
   "pinActiveWorkspaceFirst": false,
-  "sidebarWidth": 260
+  "sidebarWidth": 260,
+  "windowMode": "standard"
 }
 ```
 
-Behavior:
+Keys:
 
-- `sidebarWidth` is the sidebar width in pixels and is clamped to whole numbers between `100` and `600`
-- `compactMode` enables a denser sidebar layout with slightly smaller text
-- `pinActiveWorkspaceFirst` controls whether the focused workspace is moved to the top
-- `launchAtLogin` controls whether AeroMux asks macOS to launch it at login
-- changes made in the file are picked up the next time AeroMux launches
-- changing the width also means AeroSpace `outer.left` should be at least that wide
+- `sidebarWidth`: sidebar width in pixels, clamped to whole numbers from `100` to `600`
+- `windowMode`: `standard` or `floating`
+- `compactMode`: denser sidebar text and spacing
+- `pinActiveWorkspaceFirst`: move the focused workspace to the top
+- `launchAtLogin`: register or unregister AeroMux with macOS login items
 
-## Workspace Memory File
+Changes made through the menu bar apply immediately. Manual file edits are picked up the next time AeroMux launches.
 
-AeroMux can read custom titles and descriptions for AeroSpace workspaces from:
+### `workspaces.json`
 
-```bash
-~/.config/aeromux/workspaces.json
-```
-
-If `XDG_CONFIG_HOME` is set, AeroMux uses:
-
-```bash
-$XDG_CONFIG_HOME/aeromux/workspaces.json
-```
-
-The file is created automatically on first run and populated with the currently discovered AeroSpace workspaces:
+Created automatically as AeroMux discovers workspaces:
 
 ```json
 {
@@ -199,17 +185,27 @@ The file is created automatically on first run and populated with the currently 
 }
 ```
 
-Behavior:
+Keys:
 
-- `workspace` must match the AeroSpace workspace name exactly
-- `title` replaces the default `Task <workspace>` label
-- `description` is shown under the title
-- when a custom title is present, AeroMux also shows the raw workspace name underneath as `Workspace <name>`
-- you can edit title and description directly from the sidebar using the pencil button on each workspace card
+- `workspace`: exact AeroSpace workspace name
+- `title`: label shown in the sidebar instead of `Task <workspace>`
+- `description`: optional detail line under the title
+
+## Refresh Hook
+
+Polling works without extra setup. For faster updates after AeroSpace events, call AeroMux's local refresh endpoint:
+
+```bash
+curl -fsS -X POST http://127.0.0.1:39173/refresh >/dev/null 2>&1 || true
+```
+
+A helper script is included at `scripts/aerospace-refresh-hook.sh`.
+
+The listener binds only to `127.0.0.1:39173`.
 
 ## AeroSpace Commands Used
 
-AeroMux currently relies on these AeroSpace CLI commands:
+AeroMux currently calls:
 
 - `aerospace list-workspaces --focused --json`
 - `aerospace list-workspaces --focused --format %{workspace}`
@@ -236,7 +232,9 @@ If AeroSpace works in one shell but not another, fix your shell startup files or
 
 ### The Sidebar Floats Above Windows
 
-That means one of these is true:
+If window mode is set to floating, this is expected.
+
+If window mode is set to standard, one of these is likely true:
 
 - `outer.left` is not configured
 - the reserved left gap is smaller than the sidebar width
@@ -255,11 +253,11 @@ Then confirm your config contains a left gap reservation like:
     outer.left = [{ monitor.main = 260 }, 0]
 ```
 
-If you changed `sidebarWidth` in `settings.json` or from the menu bar, use that number instead of `260`.
+If you changed `sidebarWidth`, use that number instead of `260`.
 
 ### Clicking A Row Does Not Focus A Window
 
-Your installed AeroSpace CLI may not support `aerospace focus --window-id <id>` yet, or it may have changed behavior.
+Your installed AeroSpace CLI may not support `aerospace focus --window-id <id>` yet, or the flag may have changed.
 
 Try:
 
@@ -267,38 +265,50 @@ Try:
 aerospace focus --help
 ```
 
-If that flag is unsupported in your version, AeroMux can still display state but window focusing will fail.
+If that flag is unsupported, AeroMux can still display state but window focusing will fail.
 
 ### No Windows Or Workspaces Appear
 
-Check the basics first:
+Check that:
 
 - AeroSpace is running
-- you currently have a focused workspace
-- you have at least one managed window open
+- a workspace is focused
+- at least one managed window is open
 - `aerospace list-windows --all` returns output in your shell
 
-## Known Limitations
+## Current Limitations
 
 - Main monitor only
 - Left sidebar only
 - No Preferences window yet
 - No published compatibility matrix yet for Intel Macs or multiple AeroSpace versions
 
-## Verified On This Machine
+## Verified Environment
 
-This is not a full compatibility matrix yet. It is the environment currently verified in this repository:
+This is not a full compatibility matrix. It is the environment currently verified in this repository:
 
 - macOS 26.2 (`BuildVersion 25C56`)
 - Apple Silicon `arm64`
 - AeroSpace `0.20.3-Beta` (`6dde91ba43f62b407b2faf3739b837318266e077`)
 - Apple Swift `6.2.3`
 
-## Versioning
+## Development
 
-The repository is currently tagged `v0.1`.
+Useful local commands:
 
-This should be treated as an early public MVP rather than a polished packaged release.
+```bash
+swift build
+swift test
+make app
+```
+
+`make app` creates a packaged app at:
+
+```bash
+dist/AeroMux.app
+```
+
+General contributor workflow is documented in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md). Release packaging is documented in [docs/RELEASING.md](docs/RELEASING.md).
 
 ## Feedback
 
@@ -308,10 +318,4 @@ Issues and compatibility reports are useful, especially for:
 - Intel Mac behavior
 - AeroSpace version compatibility
 - refresh-hook integration examples
-- ideas for packaging and a better app lifecycle
-
-## Releasing
-
-If you are maintaining this repository, local packaging and tag-based GitHub Releases are documented in [docs/RELEASING.md](docs/RELEASING.md).
-
-General local contributor workflow is documented in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
+- packaging and app lifecycle ideas

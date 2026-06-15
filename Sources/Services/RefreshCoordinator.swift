@@ -95,7 +95,7 @@ final class RefreshCoordinator {
             async let snapshotTask = client.readSnapshot(
                 prioritizeFocusedWorkspace: settings.reordersFocusedWorkspaceToTop
             )
-            async let integrationTask = configService.integrationStatus(sidebarWidth: settings.sidebarWidth)
+            async let integrationTask = integrationStatus()
             let snapshot = try await snapshotTask
             let integrationStatus = await integrationTask
             async let workspaceMemoryTask = workspaceMemoryStore.metadataByWorkspace(
@@ -129,6 +129,15 @@ final class RefreshCoordinator {
         } catch {
             consecutiveFailures += 1
             stateStore.applyError(error.localizedDescription)
+        }
+    }
+
+    private func integrationStatus() async -> AeroSpaceIntegrationStatus {
+        switch settings.windowMode {
+        case .standard:
+            return await configService.integrationStatus(sidebarWidth: settings.sidebarWidth)
+        case .floating:
+            return .floatingWindowMode
         }
     }
 }

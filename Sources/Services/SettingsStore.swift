@@ -7,6 +7,20 @@ final class SettingsStore: ObservableObject {
         case focused
     }
 
+    enum WindowMode: String, CaseIterable {
+        case standard
+        case floating
+
+        var menuTitle: String {
+            switch self {
+            case .standard:
+                return "Standard"
+            case .floating:
+                return "Floating"
+            }
+        }
+    }
+
     static let defaultSidebarWidth: CGFloat = 260
     static let sidebarWidthRange: ClosedRange<CGFloat> = 100 ... 600
 
@@ -18,6 +32,7 @@ final class SettingsStore: ObservableObject {
     @Published var reordersFocusedWorkspaceToTop: Bool
     @Published var launchesAtLogin: Bool
     @Published var compactMode: Bool
+    @Published var windowMode: WindowMode
 
     private let defaults: UserDefaults
     private let fileManager: FileManager
@@ -65,6 +80,7 @@ final class SettingsStore: ObservableObject {
             ?? false
         launchesAtLogin = persistedConfig?.launchAtLogin ?? false
         compactMode = persistedConfig?.compactMode ?? false
+        windowMode = persistedConfig?.resolvedWindowMode ?? .standard
 
         if shouldBootstrapConfig {
             persistConfig()
@@ -98,7 +114,8 @@ final class SettingsStore: ObservableObject {
                 sidebarWidth: Double(sidebarWidth),
                 pinActiveWorkspaceFirst: reordersFocusedWorkspaceToTop,
                 launchAtLogin: launchesAtLogin,
-                compactMode: compactMode
+                compactMode: compactMode,
+                windowMode: windowMode.rawValue
             )
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
@@ -140,6 +157,11 @@ final class SettingsStore: ObservableObject {
         var pinActiveWorkspaceFirst: Bool?
         var launchAtLogin: Bool?
         var compactMode: Bool?
+        var windowMode: String?
+
+        var resolvedWindowMode: WindowMode? {
+            windowMode.flatMap(WindowMode.init(rawValue:))
+        }
     }
 
     private enum Keys {

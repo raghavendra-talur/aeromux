@@ -36,6 +36,12 @@ struct AeroSpaceIntegrationStatus: Equatable {
         presentation: .floatingOverlay,
         message: "Unable to confirm AeroSpace left-gap reservation. The sidebar will float until the config can be verified."
     )
+
+    static let floatingWindowMode = AeroSpaceIntegrationStatus(
+        reservedLeftGap: nil,
+        presentation: .floatingOverlay,
+        message: nil
+    )
 }
 
 struct WorkspaceGroup: Identifiable, Equatable {

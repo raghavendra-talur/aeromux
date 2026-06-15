@@ -13,6 +13,9 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     private let menu = NSMenu()
     private let toggleSidebarItem = NSMenuItem()
     private let sidebarWidthItem = NSMenuItem()
+    private let windowModeItem = NSMenuItem()
+    private let standardWindowModeItem = NSMenuItem()
+    private let floatingWindowModeItem = NSMenuItem()
     private let reorderWorkspacesItem = NSMenuItem()
     private let compactModeItem = NSMenuItem()
     private let launchAtLoginItem = NSMenuItem()
@@ -62,6 +65,23 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         sidebarWidthItem.target = self
         sidebarWidthItem.action = #selector(editSidebarWidth)
 
+        windowModeItem.title = "Window Mode"
+        let windowModeMenu = NSMenu()
+
+        standardWindowModeItem.title = SettingsStore.WindowMode.standard.menuTitle
+        standardWindowModeItem.target = self
+        standardWindowModeItem.action = #selector(selectStandardWindowMode)
+
+        floatingWindowModeItem.title = SettingsStore.WindowMode.floating.menuTitle
+        floatingWindowModeItem.target = self
+        floatingWindowModeItem.action = #selector(selectFloatingWindowMode)
+
+        windowModeMenu.items = [
+            standardWindowModeItem,
+            floatingWindowModeItem,
+        ]
+        windowModeItem.submenu = windowModeMenu
+
         reorderWorkspacesItem.title = "Pin Active Workspace First"
         reorderWorkspacesItem.target = self
         reorderWorkspacesItem.action = #selector(toggleWorkspaceReordering)
@@ -89,6 +109,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.items = [
             toggleSidebarItem,
             sidebarWidthItem,
+            windowModeItem,
             reorderWorkspacesItem,
             compactModeItem,
             launchAtLoginItem,
@@ -108,6 +129,9 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             toggleSidebarItem.title = baseTitle
         }
         sidebarWidthItem.title = "Sidebar Width: \(Int(settings.sidebarWidth)) px"
+        windowModeItem.title = "Window Mode: \(settings.windowMode.menuTitle)"
+        standardWindowModeItem.state = settings.windowMode == .standard ? .on : .off
+        floatingWindowModeItem.state = settings.windowMode == .floating ? .on : .off
         reorderWorkspacesItem.state = settings.reordersFocusedWorkspaceToTop ? .on : .off
         compactModeItem.state = settings.compactMode ? .on : .off
         launchAtLoginItem.state = settings.launchesAtLogin ? .on : .off
@@ -122,6 +146,28 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     @objc
     private func openShortcutEditor() {
         ShortcutEditorWindow.shared.show()
+    }
+
+    @objc
+    private func selectStandardWindowMode() {
+        setWindowMode(.standard)
+    }
+
+    @objc
+    private func selectFloatingWindowMode() {
+        setWindowMode(.floating)
+    }
+
+    private func setWindowMode(_ windowMode: SettingsStore.WindowMode) {
+        guard settings.windowMode != windowMode else {
+            updateMenuState()
+            return
+        }
+
+        settings.windowMode = windowMode
+        settings.persist()
+        refreshCoordinator.requestRefresh(reason: .manual)
+        updateMenuState()
     }
 
     @objc
@@ -169,7 +215,12 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
         let alert = NSAlert()
         alert.messageText = "Sidebar Width"
-        alert.informativeText = "Enter the sidebar width in pixels. Keep AeroSpace `outer.left` at least this wide."
+        switch settings.windowMode {
+        case .standard:
+            alert.informativeText = "Enter the sidebar width in pixels. Keep AeroSpace `outer.left` at least this wide."
+        case .floating:
+            alert.informativeText = "Enter the sidebar width in pixels. Floating mode does not require an AeroSpace `outer.left` gap."
+        }
 
         let inputField = NSTextField(string: "\(Int(settings.sidebarWidth))")
         inputField.frame = NSRect(x: 0, y: 0, width: 220, height: 24)
