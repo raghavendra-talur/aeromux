@@ -14,10 +14,10 @@ struct WorkspaceSectionView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Circle()
-                    .fill(workspace.isFocused ? Color.green : Color.clear)
+                    .fill(workspace.isFocused ? workspace.resolvedColor : Color.clear)
                     .overlay(
                         Circle()
-                            .stroke(workspace.isFocused ? Color.green : Color.white.opacity(0.35), lineWidth: 1)
+                            .stroke(workspace.resolvedColor.opacity(workspace.isFocused ? 1 : 0.5), lineWidth: 1)
                     )
                     .frame(width: 8, height: 8)
 
@@ -76,11 +76,11 @@ struct WorkspaceSectionView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(workspace.isFocused ? Color.white.opacity(0.1) : Color.white.opacity(0.05))
+                .fill(workspace.isFocused ? workspace.resolvedColor.opacity(0.18) : Color.white.opacity(0.05))
         )
         .overlay {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(workspace.isFocused ? Color.green.opacity(0.35) : Color.white.opacity(0.06), lineWidth: 1)
+                .stroke(workspace.isFocused ? workspace.resolvedColor.opacity(0.5) : Color.white.opacity(0.06), lineWidth: 1)
         }
         .sheet(isPresented: $isEditorPresented) {
             WorkspaceMetadataEditor(
@@ -102,6 +102,7 @@ private struct WorkspaceMetadataEditor: View {
     @Environment(\.dismiss) private var dismiss
     @State private var title: String
     @State private var description: String
+    @State private var color: Color
     @State private var isSaving = false
 
     init(
@@ -116,6 +117,7 @@ private struct WorkspaceMetadataEditor: View {
         self.refreshCoordinator = refreshCoordinator
         _title = State(initialValue: workspace.titleOverride ?? workspace.workspaceName)
         _description = State(initialValue: workspace.descriptionOverride ?? "")
+        _color = State(initialValue: workspace.resolvedColor)
     }
 
     var body: some View {
@@ -147,6 +149,12 @@ private struct WorkspaceMetadataEditor: View {
                     .textFieldStyle(.roundedBorder)
             }
 
+            ColorPicker(selection: $color, supportsOpacity: false) {
+                Text("Color")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.secondary)
+            }
+
             HStack {
                 Spacer(minLength: 0)
 
@@ -173,6 +181,7 @@ private struct WorkspaceMetadataEditor: View {
                 workspace: workspace.workspaceName,
                 title: title,
                 description: description,
+                color: color.aeroMuxHex,
                 discoveredWorkspaces: allWorkspaceNames
             )
             await MainActor.run {

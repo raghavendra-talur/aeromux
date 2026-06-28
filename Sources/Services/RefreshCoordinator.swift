@@ -109,7 +109,8 @@ final class RefreshCoordinator {
                     windows: workspace.windows,
                     isFocused: workspace.isFocused,
                     titleOverride: metadata?.title,
-                    descriptionOverride: metadata?.description
+                    descriptionOverride: metadata?.description,
+                    colorOverride: metadata?.color
                 )
             }
             let totalWindowCount = annotatedWorkspaces.reduce(0) { $0 + $1.windows.count }
