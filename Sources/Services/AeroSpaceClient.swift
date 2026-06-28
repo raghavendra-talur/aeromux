@@ -249,7 +249,8 @@ extension AeroSpaceClient {
                 windows: sortWindows(windows),
                 isFocused: workspaceName == focusedWorkspaceName,
                 titleOverride: nil,
-                descriptionOverride: nil
+                descriptionOverride: nil,
+                colorOverride: nil
             )
         }
 
@@ -260,7 +261,8 @@ extension AeroSpaceClient {
                     windows: [],
                     isFocused: true,
                     titleOverride: nil,
-                    descriptionOverride: nil
+                    descriptionOverride: nil,
+                    colorOverride: nil
                 )
             )
         }

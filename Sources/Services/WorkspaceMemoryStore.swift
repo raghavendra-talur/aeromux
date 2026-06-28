@@ -4,6 +4,7 @@ struct WorkspaceMemoryEntry: Codable, Equatable {
     let workspace: String
     let title: String?
     let description: String?
+    let color: String?
 }
 
 struct WorkspaceMemoryFile: Codable {
@@ -34,7 +35,7 @@ actor WorkspaceMemoryStore {
         }
     }
 
-    func save(workspace: String, title: String, description: String, discoveredWorkspaces: [String]) async {
+    func save(workspace: String, title: String, description: String, color: String?, discoveredWorkspaces: [String]) async {
         do {
             let fileURL = try configFileURL()
             var entries = try loadEntries(from: fileURL)
@@ -43,7 +44,8 @@ actor WorkspaceMemoryStore {
             let updatedEntry = WorkspaceMemoryEntry(
                 workspace: workspace,
                 title: normalize(title) ?? workspace,
-                description: normalize(description)
+                description: normalize(description),
+                color: normalize(color)
             )
 
             if let index = entries.firstIndex(where: { $0.workspace == workspace }) {
@@ -84,7 +86,8 @@ actor WorkspaceMemoryStore {
             WorkspaceMemoryEntry(
                 workspace: entry.workspace,
                 title: normalize(entry.title) ?? entry.workspace,
-                description: normalize(entry.description)
+                description: normalize(entry.description),
+                color: normalize(entry.color)
             )
         }
     }
@@ -98,14 +101,16 @@ actor WorkspaceMemoryStore {
                 return WorkspaceMemoryEntry(
                     workspace: existing.workspace,
                     title: normalize(existing.title) ?? workspace,
-                    description: normalize(existing.description)
+                    description: normalize(existing.description),
+                    color: normalize(existing.color)
                 )
             }
 
             return WorkspaceMemoryEntry(
                 workspace: workspace,
                 title: workspace,
-                description: nil
+                description: nil,
+                color: nil
             )
         }
 
