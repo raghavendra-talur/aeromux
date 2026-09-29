@@ -14,11 +14,7 @@ struct WorkspaceSectionView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Circle()
-                    .fill(workspace.isFocused ? workspace.resolvedColor : Color.clear)
-                    .overlay(
-                        Circle()
-                            .stroke(workspace.resolvedColor.opacity(workspace.isFocused ? 1 : 0.5), lineWidth: 1)
-                    )
+                    .fill(workspace.resolvedColor)
                     .frame(width: 8, height: 8)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -76,11 +72,14 @@ struct WorkspaceSectionView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(workspace.isFocused ? workspace.resolvedColor.opacity(0.18) : Color.white.opacity(0.05))
+                .fill(workspace.resolvedColor.opacity(workspace.isFocused ? 0.22 : 0.14))
         )
         .overlay {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(workspace.isFocused ? workspace.resolvedColor.opacity(0.5) : Color.white.opacity(0.06), lineWidth: 1)
+                .stroke(
+                    workspace.resolvedColor.opacity(workspace.isFocused ? 0.8 : 0.45),
+                    lineWidth: workspace.isFocused ? 1.5 : 1
+                )
         }
         .sheet(isPresented: $isEditorPresented) {
             WorkspaceMetadataEditor(
