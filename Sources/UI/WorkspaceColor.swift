@@ -34,7 +34,9 @@ extension Color {
     init?(aeroMuxHex hex: String) {
         var string = hex.trimmingCharacters(in: .whitespacesAndNewlines)
         if string.hasPrefix("#") { string.removeFirst() }
-        guard string.count == 6, let value = UInt64(string, radix: 16) else { return nil }
+        guard string.count == 6,
+              string.allSatisfy(\.isHexDigit),
+              let value = UInt64(string, radix: 16) else { return nil }
         let red = Double((value >> 16) & 0xFF) / 255.0
         let green = Double((value >> 8) & 0xFF) / 255.0
         let blue = Double(value & 0xFF) / 255.0
@@ -44,9 +46,17 @@ extension Color {
     /// Serializes the color to a "#RRGGBB" hex string in sRGB.
     var aeroMuxHex: String? {
         guard let srgb = NSColor(self).usingColorSpace(.sRGB) else { return nil }
-        let red = Int((srgb.redComponent * 255).rounded())
-        let green = Int((srgb.greenComponent * 255).rounded())
-        let blue = Int((srgb.blueComponent * 255).rounded())
-        return String(format: "#%02x%02x%02x", red, green, blue)
+        return String(
+            format: "#%02x%02x%02x",
+            Self.hexByte(srgb.redComponent),
+            Self.hexByte(srgb.greenComponent),
+            Self.hexByte(srgb.blueComponent)
+        )
+    }
+
+    /// Converts a color component to 0...255, clamping values outside the
+    /// sRGB gamut so the result always fits in two hex digits.
+    private static func hexByte(_ component: CGFloat) -> Int {
+        Int((min(max(component, 0), 1) * 255).rounded())
     }
 }
