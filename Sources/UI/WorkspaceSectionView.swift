@@ -49,7 +49,7 @@ struct WorkspaceSectionView: View {
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
-                .help("Edit workspace title and description")
+                .help("Edit workspace title, description, and color")
             }
 
             if workspace.windows.isEmpty {
@@ -102,7 +102,10 @@ private struct WorkspaceMetadataEditor: View {
     @Environment(\.dismiss) private var dismiss
     @State private var title: String
     @State private var description: String
-    @State private var color: Color
+    /// Hex string of an explicitly chosen color, or nil to use the default
+    /// palette. Only set when the user picks a color, so saving title or
+    /// description edits doesn't pin the default color into workspaces.json.
+    @State private var colorOverride: String?
     @State private var isSaving = false
 
     init(
@@ -117,7 +120,7 @@ private struct WorkspaceMetadataEditor: View {
         self.refreshCoordinator = refreshCoordinator
         _title = State(initialValue: workspace.titleOverride ?? workspace.workspaceName)
         _description = State(initialValue: workspace.descriptionOverride ?? "")
-        _color = State(initialValue: workspace.resolvedColor)
+        _colorOverride = State(initialValue: workspace.colorOverride)
     }
 
     var body: some View {
@@ -149,10 +152,19 @@ private struct WorkspaceMetadataEditor: View {
                     .textFieldStyle(.roundedBorder)
             }
 
-            ColorPicker(selection: $color, supportsOpacity: false) {
-                Text("Color")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.secondary)
+            HStack {
+                ColorPicker(selection: colorSelection, supportsOpacity: false) {
+                    Text("Color")
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 0)
+
+                Button("Reset to Default") {
+                    colorOverride = nil
+                }
+                .disabled(colorOverride == nil)
             }
 
             HStack {
@@ -174,6 +186,16 @@ private struct WorkspaceMetadataEditor: View {
         .frame(width: 320)
     }
 
+    private var colorSelection: Binding<Color> {
+        Binding(
+            get: {
+                colorOverride.flatMap { Color(aeroMuxHex: $0) }
+                    ?? WorkspaceGroup.defaultColor(for: workspace.workspaceName)
+            },
+            set: { colorOverride = $0.aeroMuxHex }
+        )
+    }
+
     private func save() {
         isSaving = true
         Task {
@@ -181,7 +203,7 @@ private struct WorkspaceMetadataEditor: View {
                 workspace: workspace.workspaceName,
                 title: title,
                 description: description,
-                color: color.aeroMuxHex,
+                color: colorOverride,
                 discoveredWorkspaces: allWorkspaceNames
             )
             await MainActor.run {
