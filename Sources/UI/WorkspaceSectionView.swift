@@ -14,7 +14,11 @@ struct WorkspaceSectionView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Circle()
-                    .fill(workspace.resolvedColor)
+                    .fill(workspace.isFocused ? Color.green : Color.clear)
+                    .overlay(
+                        Circle()
+                            .stroke(workspace.isFocused ? Color.green : Color.white.opacity(0.35), lineWidth: 1)
+                    )
                     .frame(width: 8, height: 8)
 
                 VStack(alignment: .leading, spacing: 2) {
