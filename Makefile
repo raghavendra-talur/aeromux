@@ -2,6 +2,7 @@
 
 APP_NAME := AeroMux
 PROJECT := $(APP_NAME).xcodeproj
+PROJECT_FILE := $(PROJECT)/project.pbxproj
 SCHEME := $(APP_NAME)
 DERIVED_DATA := DerivedData
 DIST_DIR := dist
@@ -16,20 +17,26 @@ DEBUG_APP := $(DERIVED_DATA)/Build/Products/Debug/$(APP_NAME).app
 help: ## Show available targets
 	@awk 'BEGIN {FS = ":.*## "}; /^[a-zA-Z0-9_.-]+:.*## / {printf "%-18s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-# Regenerate the Xcode project from project.yml whenever the spec changes.
-$(PROJECT): project.yml
+# Regenerate the Xcode project when the spec changes or when files are added,
+# removed, or renamed under Sources/ or Tests/ (which updates the mtime of the
+# containing directory). xcodegen may leave an unchanged project untouched, so
+# touch it to keep make from regenerating on every run.
+PROJECT_INPUTS := project.yml $(shell find Sources Tests -type d)
+
+$(PROJECT_FILE): $(PROJECT_INPUTS)
 	xcodegen generate
+	touch $@
 
 generate: ## Regenerate the Xcode project from project.yml
 	xcodegen generate
 
-build: $(PROJECT) ## Build the debug app with xcodebuild
+build: $(PROJECT_FILE) ## Build the debug app with xcodebuild
 	$(XCODEBUILD) -configuration Debug build
 
-build-release: $(PROJECT) ## Build the release app with xcodebuild
+build-release: $(PROJECT_FILE) ## Build the release app with xcodebuild
 	$(XCODEBUILD) -configuration Release build
 
-test: $(PROJECT) ## Run the unit tests with xcodebuild
+test: $(PROJECT_FILE) ## Run the unit tests with xcodebuild
 	$(XCODEBUILD) -configuration Debug test
 
 run: build ## Build and launch the debug app
