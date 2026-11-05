@@ -1,5 +1,7 @@
 # AeroMux
 
+> **New from the author of AeroMux:** [slotWM](https://www.rastarbrain.com/slotwm/) is a macOS window manager that replaces AeroSpace, so you don't need to run AeroSpace or AeroMux. It keeps the always-visible sidebar idea: a rail shows every open window, each window stays in a slot you shape yourself, and switching to one moves nothing else.
+
 AeroMux is a macOS menu bar companion for [AeroSpace](https://github.com/nikitabobko/AeroSpace). It adds a persistent left sidebar so you can see your non-empty workspaces, spot the focused window, and jump directly to a window without leaving your tiling workflow.
 
 ![AeroMux screenshot](docs/assets/aeromux-screenshot.png)
